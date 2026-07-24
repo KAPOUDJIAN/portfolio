@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Set up your projects</title>
+<style>
+:root{
+  --ink:#0B0B0C;--ink-2:#131316;--paper:#EDE9E3;--dim:#9B968E;
+  --rule:#2A2A2E;--signal:#C4592B;--ok:#6E9B6B;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--ink);color:var(--paper);
+  font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  padding:2rem 1.25rem 5rem;
+}
+.wrap{max-width:900px;margin:0 auto}
+h1{font-size:1.6rem;margin:0 0 .35rem;font-weight:600}
+.sub{color:var(--dim);margin:0 0 2.5rem}
+.step{border-top:1px solid var(--rule);padding:1.75rem 0}
+.step h2{font-size:1rem;margin:0 0 .5rem;display:flex;align-items:center;gap:.6rem}
+.n{
+  width:1.5rem;height:1.5rem;border-radius:50%;background:var(--signal);
+  color:#fff;font-size:.78rem;display:grid;place-items:center;flex:none;font-weight:600;
+}
+.step p{color:var(--dim);margin:.35rem 0 1rem}
+kbd{
+  background:var(--ink-2);border:1px solid var(--rule);border-radius:4px;
+  padding:.1rem .4rem;font-size:.85em;font-family:ui-monospace,monospace;
+}
+textarea{
+  width:100%;min-height:150px;background:var(--ink-2);color:var(--paper);
+  border:1px solid var(--rule);border-radius:8px;padding:.9rem;
+  font-family:ui-monospace,monospace;font-size:12px;resize:vertical;
+}
+textarea:focus{outline:2px solid var(--signal);outline-offset:1px}
+button{
+  background:var(--paper);color:var(--ink);border:0;border-radius:8px;
+  padding:.7rem 1.2rem;font-size:.92rem;font-weight:600;cursor:pointer;
+}
+button:hover{opacity:.9}
+button.ghost{background:none;color:var(--paper);border:1px solid var(--rule)}
+button:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+.msg{margin-top:.9rem;font-size:.9rem}
+.msg.ok{color:var(--ok)}
+.msg.err{color:var(--signal)}
+.hidden{display:none}
+
+table{width:100%;border-collapse:collapse;margin-top:1rem;font-size:.9rem}
+th{
+  text-align:left;color:var(--dim);font-weight:500;font-size:.72rem;
+  text-transform:uppercase;letter-spacing:.08em;padding:.5rem .5rem;
+  border-bottom:1px solid var(--rule);
+}
+td{padding:.55rem .5rem;border-bottom:1px solid var(--rule);vertical-align:middle}
+td img{width:52px;height:40px;object-fit:cover;border-radius:4px;background:var(--ink-2);display:block}
+td input{
+  width:100%;background:var(--ink-2);color:var(--paper);border:1px solid var(--rule);
+  border-radius:5px;padding:.4rem .5rem;font:inherit;font-size:.86rem;
+}
+td input:focus{outline:1px solid var(--signal)}
+.mini{background:none;border:1px solid var(--rule);color:var(--dim);
+  border-radius:5px;padding:.25rem .5rem;font-size:.82rem;cursor:pointer;line-height:1}
+.mini:hover{color:var(--paper)}
+.drop{
+  border:1px dashed var(--rule);border-radius:8px;padding:1.5rem;text-align:center;
+  color:var(--dim);cursor:pointer;
+}
+.drop.over{border-color:var(--signal);color:var(--paper)}
+code{background:var(--ink-2);padding:.1rem .35rem;border-radius:4px;font-size:.88em}
+details{margin-top:1rem}
+summary{cursor:pointer;color:var(--dim);font-size:.9rem}
+details p, details li{color:var(--dim);font-size:.9rem}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Set up your projects</h1>
+<p class="sub">Gets your Behance work onto the site. About a minute.</p>
+
+<!-- STEP 1 -->
+<div class="step">
+  <h2><span class="n">1</span> Copy your Behance page</h2>
+  <p>
+    Open <a href="https://www.behance.net/kapoudjianaram" target="_blank" rel="noopener" style="color:var(--signal)">your Behance profile</a>,
+    <strong>scroll all the way to the bottom</strong> so every project loads, then press
+    <kbd>Ctrl</kbd>+<kbd>A</kbd> and <kbd>Ctrl</kbd>+<kbd>C</kbd>
+    (<kbd>&#8984;A</kbd> / <kbd>&#8984;C</kbd> on Mac).
+  </p>
+  <p>Paste it in the box below.</p>
+  <textarea id="paste" placeholder="Paste here…"></textarea>
+  <div class="row" style="margin-top:.8rem">
+    <button id="parse">Find my projects</button>
+    <button class="ghost" id="demo">Use sample projects instead</button>
+  </div>
+  <div class="msg" id="msg1"></div>
+
+  <details>
+    <summary>Didn't find everything?</summary>
+    <p>Pasting a page sometimes drops the image links. For a complete grab: on your Behance
+    profile press <kbd>F12</kbd>, click <strong>Console</strong>, paste the snippet below, press Enter,
+    then drop the downloaded file here.</p>
+    <textarea id="snippet" readonly style="min-height:110px"></textarea>
+    <div class="row" style="margin-top:.6rem">
+      <button class="ghost" id="copysnip">Copy snippet</button>
+    </div>
+    <div class="drop" id="drop" style="margin-top:.8rem">Drop the downloaded projects.json here</div>
+  </details>
+</div>
+
+<!-- STEP 2 -->
+<div class="step hidden" id="step2">
+  <h2><span class="n">2</span> Tidy them up</h2>
+  <p>Fix any titles, add a tag to each (tags become the filter buttons), and remove anything you don't want shown.</p>
+  <div class="row">
+    <button class="ghost mini" id="tagall">Tag all as “Visualization”</button>
+    <span style="color:var(--dim);font-size:.85rem" id="countLbl"></span>
+  </div>
+  <table>
+    <thead><tr><th></th><th>Title</th><th>Tag</th><th></th><th></th></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<!-- STEP 3 -->
+<div class="step hidden" id="step3">
+  <h2><span class="n">3</span> Download and drop in</h2>
+  <p>Save <code>projects.js</code> into the same folder as <code>index.html</code>, then open
+  <code>index.html</code>. That's it — no server, no setup.</p>
+  <div class="row">
+    <button id="download">Download projects.js</button>
+    <button class="ghost" id="preview">Preview the site</button>
+  </div>
+  <div class="msg" id="msg3"></div>
+</div>
+
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+let projects = [];
+
+/* ---------- console snippet shown in the details panel ---------- */
+$("#snippet").value = `(()=>{const s=new Map();document.querySelectorAll('a[href*="/gallery/"]').forEach(a=>{const m=a.href.match(/\\/gallery\\/(\\d+)\\/([^/?#]+)/);if(!m)return;const[,id,slug]=m;if(s.has(id))return;const c=a.closest('[class*="Project"],li,article')||a,i=c.querySelector('img');s.set(id,{id,title:(c.querySelector('[class*="title"]')?.textContent||decodeURIComponent(slug).replace(/-/g,' ')).trim(),url:'https://www.behance.net/gallery/'+id+'/'+slug,cover:i?.src||i?.dataset?.src||null,fields:[]})});const d={username:"kapoudjianaram",projects:[...s.values()]};console.log('Found '+s.size);const b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="projects.json";a.click();})()`;
+
+$("#copysnip").onclick = () => {
+  $("#snippet").select();
+  document.execCommand("copy");
+  $("#copysnip").textContent = "Copied";
+  setTimeout(()=>$("#copysnip").textContent="Copy snippet", 1500);
+};
+
+/* ---------- parsing pasted page text ---------- */
+function titleFromSlug(slug){
+  return decodeURIComponent(slug)
+    .replace(/-/g," ")
+    .replace(/\s+/g," ")
+    .trim()
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function parsePaste(text){
+  const found = new Map();
+
+  // Gallery URLs, whether pasted as links or plain text.
+  const re = /behance\.net\/gallery\/(\d+)\/([A-Za-z0-9\-_%]+)/g;
+  let m;
+  while ((m = re.exec(text)) !== null){
+    const [, id, slug] = m;
+    if (found.has(id)) continue;
+    found.set(id, {
+      id,
+      title: titleFromSlug(slug),
+      url: `https://www.behance.net/gallery/${id}/${slug}`,
+      cover: null,
+      fields: []
+    });
+  }
+
+  // Any Behance CDN images in the same paste, matched up in order.
+  const imgs = [...text.matchAll(/https?:\/\/mir-s3-cdn-cf\.behance\.net\/[^\s"'<>)]+/g)]
+    .map(x => x[0])
+    .filter(u => /\.(jpe?g|png|webp)/i.test(u));
+
+  const list = [...found.values()];
+  list.forEach((p, i) => { if (imgs[i]) p.cover = imgs[i]; });
+  return list;
+}
+
+$("#parse").onclick = () => {
+  const text = $("#paste").value;
+  if (!text.trim()){
+    $("#msg1").className = "msg err";
+    $("#msg1").textContent = "Paste your Behance page into the box first.";
+    return;
+  }
+  const found = parsePaste(text);
+  if (!found.length){
+    $("#msg1").className = "msg err";
+    $("#msg1").textContent = "No projects found in that paste. Try the console method under “Didn't find everything?”";
+    return;
+  }
+  projects = found;
+  $("#msg1").className = "msg ok";
+  $("#msg1").textContent = `Found ${found.length} project${found.length>1?"s":""}.`;
+  showTable();
+};
+
+/* ---------- sample data ---------- */
+$("#demo").onclick = () => {
+  projects = [
+    {id:"1",title:"The Grove",url:"#",cover:null,fields:["Exterior"]},
+    {id:"2",title:"Summit House",url:"#",cover:null,fields:["Exterior"]},
+    {id:"3",title:"Canyon ADU",url:"#",cover:null,fields:["Interior"]},
+    {id:"4",title:"Riverside Villa",url:"#",cover:null,fields:["Interior"]},
+    {id:"5",title:"Desert Pavilion",url:"#",cover:null,fields:["Animation"]},
+    {id:"6",title:"Hillside Terraces",url:"#",cover:null,fields:["Landscape"]}
+  ];
+  $("#msg1").className = "msg ok";
+  $("#msg1").textContent = "Loaded 6 sample projects — swap them for your own later.";
+  showTable();
+};
+
+/* ---------- drop a downloaded projects.json ---------- */
+const drop = $("#drop");
+["dragenter","dragover"].forEach(e =>
+  drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add("over"); }));
+["dragleave","drop"].forEach(e =>
+  drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", ev => {
+  const f = ev.dataTransfer.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try{
+      const d = JSON.parse(r.result);
+      projects = (d.projects || d).map(p => ({...p, fields: p.fields || []}));
+      $("#msg1").className = "msg ok";
+      $("#msg1").textContent = `Loaded ${projects.length} projects from file.`;
+      showTable();
+    }catch{
+      $("#msg1").className = "msg err";
+      $("#msg1").textContent = "That file didn't look like valid JSON.";
+    }
+  };
+  r.readAsText(f);
+});
+drop.addEventListener("click", () => {
+  const i = document.createElement("input");
+  i.type = "file"; i.accept = ".json";
+  i.onchange = () => drop.dispatchEvent(
+    Object.assign(new Event("drop"), {dataTransfer:{files:i.files}, preventDefault(){}}));
+  i.click();
+});
+
+/* ---------- editable table ---------- */
+function showTable(){
+  $("#step2").classList.remove("hidden");
+  $("#step3").classList.remove("hidden");
+  renderRows();
+  $("#step2").scrollIntoView({behavior:"smooth", block:"start"});
+}
+
+function renderRows(){
+  const tb = $("#rows");
+  tb.innerHTML = "";
+  projects.forEach((p, i) => {
+    const tr = document.createElement("tr");
+
+    const tdImg = document.createElement("td");
+    if (p.cover){
+      const im = document.createElement("img");
+      im.src = p.cover; im.alt = "";
+      im.onerror = () => { im.style.visibility = "hidden"; };
+      tdImg.appendChild(im);
+    } else {
+      tdImg.innerHTML = `<div style="width:52px;height:40px;border-radius:4px;background:var(--ink-2)"></div>`;
+    }
+
+    const tdTitle = document.createElement("td");
+    const inT = document.createElement("input");
+    inT.value = p.title || "";
+    inT.oninput = () => { projects[i].title = inT.value; };
+    tdTitle.appendChild(inT);
+
+    const tdTag = document.createElement("td");
+    const inF = document.createElement("input");
+    inF.value = (p.fields || []).join(", ");
+    inF.placeholder = "Exterior";
+    inF.oninput = () => {
+      projects[i].fields = inF.value.split(",").map(s=>s.trim()).filter(Boolean);
+    };
+    tdTag.appendChild(inF);
+
+    const tdUp = document.createElement("td");
+    const up = document.createElement("button");
+    up.className = "mini"; up.textContent = "↑"; up.title = "Move up";
+    up.disabled = i === 0;
+    up.onclick = () => {
+      [projects[i-1], projects[i]] = [projects[i], projects[i-1]];
+      renderRows();
+    };
+    tdUp.appendChild(up);
+
+    const tdDel = document.createElement("td");
+    const del = document.createElement("button");
+    del.className = "mini"; del.textContent = "Remove";
+    del.onclick = () => { projects.splice(i,1); renderRows(); };
+    tdDel.appendChild(del);
+
+    tr.append(tdImg, tdTitle, tdTag, tdUp, tdDel);
+    tb.appendChild(tr);
+  });
+  $("#countLbl").textContent = `${projects.length} project${projects.length===1?"":"s"}`;
+}
+
+$("#tagall").onclick = () => {
+  projects.forEach(p => { if(!p.fields.length) p.fields = ["Visualization"]; });
+  renderRows();
+};
+
+/* ---------- output ---------- */
+function buildFile(){
+  const data = {
+    username: "kapoudjianaram",
+    profile: "https://www.behance.net/kapoudjianaram",
+    updated: new Date().toISOString(),
+    count: projects.length,
+    projects: projects.map(p => ({
+      id: String(p.id),
+      title: p.title || "Untitled",
+      url: p.url || "#",
+      cover: p.cover || null,
+      fields: p.fields || [],
+      published: p.published || null,
+      views: p.views ?? null,
+      appreciations: p.appreciations ?? null
+    }))
+  };
+  return "window.PROJECT_DATA = " + JSON.stringify(data, null, 2) + ";\n";
+}
+
+$("#download").onclick = () => {
+  if (!projects.length) return;
+  const blob = new Blob([buildFile()], {type:"application/javascript"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "projects.js";
+  a.click();
+  $("#msg3").className = "msg ok";
+  $("#msg3").textContent = "Saved. Put it next to index.html, then open index.html.";
+};
+
+$("#preview").onclick = () => {
+  sessionStorage.setItem("PREVIEW_PROJECTS", JSON.stringify({projects}));
+  window.open("index.html?preview=1", "_blank");
+};
+</script>
+</body>
+</html>

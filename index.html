@@ -1,0 +1,2103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aram Kapoudjian — Architectural Visualization</title>
+<meta name="description" content="Architectural visualization for architects, developers and studios. Stills, animation, and real site context captured by drone.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300&family=Archivo:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink:#0B0B0C;
+  --ink-2:#131316;
+  --paper:#EDE9E3;
+  --paper-dim:#9B968E;
+  --rule:#2A2A2E;
+  --signal:#C14953;
+  --blueprint:#5B7C8D;
+
+  --display:"Fraunces",ui-serif,"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --body:"Archivo",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Inter,Arial,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,monospace;
+
+  --gut:clamp(1.25rem,4vw,4rem);
+  --max:1560px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--ink);
+  color:var(--paper);
+  font-family:var(--body);
+  font-size:clamp(.95rem,.9rem + .2vw,1.05rem);
+  line-height:1.6;
+  overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+
+:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
+
+.wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--gut)}
+
+/* ---------- type ---------- */
+.eyebrow{
+  font-family:var(--mono);
+  font-size:.68rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--paper-dim);
+}
+.h-display{
+  font-family:var(--display);
+  font-weight:300;
+  font-size:clamp(2.6rem,1.2rem + 6.4vw,7.5rem);
+  line-height:.92;
+  letter-spacing:-.02em;
+  margin:0;
+}
+.h-section{
+  font-family:var(--display);
+  font-weight:300;
+  font-size:clamp(1.9rem,1.2rem + 2.6vw,3.6rem);
+  line-height:1.02;
+  letter-spacing:-.015em;
+  margin:0;
+}
+.lede{
+  font-size:clamp(1.02rem,.95rem + .45vw,1.32rem);
+  line-height:1.5;
+  color:var(--paper);
+  max-width:34ch;
+}
+.dim{color:var(--paper-dim)}
+
+/* ---------- hero backdrop: the work itself ---------- */
+#bg{
+  position:fixed;inset:0;z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+#bg-dots{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  opacity:0;
+  transition:opacity 1.6s cubic-bezier(.16,1,.3,1);
+}
+body.dots-ready #bg-dots{opacity:.62}
+
+
+
+/* When the dot matrix runs, the plain image underneath is hidden. */
+body.dots-ready #bg-img{opacity:0 !important}
+
+#bg-img{
+  position:absolute;inset:0;
+  background-position:center 30%;
+  background-size:cover;
+  background-repeat:no-repeat;
+  opacity:0;
+  transform:scale(1.08);
+  transition:opacity 2s cubic-bezier(.16,1,.3,1),
+             transform 2.4s cubic-bezier(.16,1,.3,1);
+  will-change:transform,opacity;
+}
+body.bg-ready #bg-img{opacity:var(--bg-op,1);transform:scale(1.02)}
+
+/* Gallery-wall darkening: the image emerges at the top, recedes into black. */
+#bg-veil{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(to bottom,
+      rgba(11,11,12,.18) 0%,
+      rgba(11,11,12,.10) 26%,
+      rgba(11,11,12,.48) 58%,
+      rgba(11,11,12,.94) 82%,
+      rgba(11,11,12,1) 100%),
+    linear-gradient(to right,
+      rgba(11,11,12,.55) 0%,
+      rgba(11,11,12,.06) 46%,
+      rgba(11,11,12,.10) 100%);
+}
+
+header,main,footer{position:relative;z-index:2;position:relative;z-index:2;position:relative;z-index:1}
+
+/* ---------- loader ---------- */
+#loader{
+  position:fixed;inset:0;z-index:100;
+  background:var(--ink);
+  display:grid;place-items:center;
+}
+#loader .count{
+  font-family:var(--display);
+  font-size:clamp(3rem,10vw,7rem);
+  font-weight:300;
+  font-variant-numeric:tabular-nums;
+}
+#loader .bar{
+  position:absolute;left:0;bottom:0;height:1px;
+  background:var(--signal);width:0%;
+}
+body.loaded #loader{
+  transform:translateY(-101%);
+  transition:transform 1s cubic-bezier(.76,0,.24,1);
+}
+
+/* ---------- cursor ---------- */
+#cursor-layer{position:fixed;inset:0;z-index:90;pointer-events:none}
+
+#cursor{
+  position:fixed;top:0;left:0;
+  width:8px;height:8px;border-radius:50%;
+  background:var(--paper);
+  mix-blend-mode:difference;
+  transform:translate(-50%,-50%);
+  transition:width .35s cubic-bezier(.16,1,.3,1),
+             height .35s cubic-bezier(.16,1,.3,1),
+             opacity .25s;
+}
+
+/* thin ring that trails the dot on interactive elements */
+#cursor-ring{
+  position:fixed;top:0;left:0;
+  width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--paper);
+  transform:translate(-50%,-50%) scale(.35);
+  opacity:0;
+  mix-blend-mode:difference;
+  transition:transform .45s cubic-bezier(.16,1,.3,1),opacity .3s;
+}
+body.c-link #cursor-ring{opacity:1;transform:translate(-50%,-50%) scale(1)}
+body.c-link #cursor{width:4px;height:4px}
+
+
+/* small label inside the ring */
+#cursor-label{
+  position:fixed;top:0;left:0;
+  transform:translate(-50%,-50%) translateY(6px);
+  font-family:var(--mono);font-size:.56rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--paper);
+  opacity:0;white-space:nowrap;
+  mix-blend-mode:difference;
+  transition:opacity .3s,transform .45s cubic-bezier(.16,1,.3,1);
+}
+body.c-link #cursor-label{opacity:.85;transform:translate(-50%,-50%) translateY(30px)}
+
+@media (hover:none){#cursor-layer{display:none}}
+
+/* ---------- nav ---------- */
+header{
+  position:fixed;top:0;left:0;right:0;z-index:60;
+  padding:1.15rem 0;
+  color:var(--paper);
+}
+/* Scrim so the header always has something to sit on, over image or content. */
+header::before{
+  content:"";
+  position:absolute;inset:0;
+  background:linear-gradient(to bottom,
+    rgba(11,11,12,.95) 0%,
+    rgba(11,11,12,.78) 50%,
+    rgba(11,11,12,.30) 82%,
+    rgba(11,11,12,0) 100%);
+  backdrop-filter:blur(3px);
+  -webkit-backdrop-filter:blur(3px);
+  opacity:1;
+  transition:opacity .5s ease;
+  pointer-events:none;
+}
+/* Once past the hero the page is dark enough that the scrim can relax. */
+body.scrolled header::before{
+  background:linear-gradient(to bottom,
+    rgba(11,11,12,.94) 0%,
+    rgba(11,11,12,.80) 60%,
+    rgba(11,11,12,0) 100%);
+}
+header .wrap{position:relative;z-index:1}
+header .wrap{display:flex;justify-content:space-between;align-items:baseline;gap:1rem}
+.mark{font-family:var(--display);font-size:1.05rem;letter-spacing:-.01em}
+nav{display:flex;gap:clamp(.9rem,2vw,2rem)}
+nav a{font-family:var(--mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase}
+nav a::after{
+  content:"";display:block;height:1px;background:currentColor;
+  transform:scaleX(0);transform-origin:left;transition:transform .4s cubic-bezier(.76,0,.24,1);
+}
+nav a:hover::after{transform:scaleX(1)}
+@media(max-width:640px){nav a:not(.nav-cta){display:none}}
+
+/* ---------- hero ---------- */
+#hero{
+  min-height:100svh;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  padding-block:8rem 2.5rem;
+  position:relative;
+}
+.hero-grid{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:clamp(1.5rem,4vw,4rem);
+  align-items:end;
+}
+@media(min-width:900px){
+  .hero-grid{grid-template-columns:1.35fr .65fr}
+}
+.hero-title .line{display:block;overflow:hidden}
+.hero-title .line > span{display:block;transform:translateY(105%)}
+.hero-title em{
+  font-style:italic;
+  color:var(--signal);
+  display:inline-block;
+  cursor:pointer;
+  position:relative;
+}
+.hero-title em .ch{
+  display:inline-block;
+  will-change:transform;
+  /* whitespace inside the word is preserved by the span split */
+}
+@keyframes heroWave{
+  0%   {transform:translateY(0) rotate(0deg)}
+  28%  {transform:translateY(-0.17em) rotate(-2.4deg)}
+  55%  {transform:translateY(0.07em) rotate(1.4deg)}
+  78%  {transform:translateY(-0.03em) rotate(-0.5deg)}
+  100% {transform:translateY(0) rotate(0deg)}
+}
+.hero-title em.wave .ch{
+  animation:heroWave .78s cubic-bezier(.28,.9,.34,1) both;
+}
+.hero-title em::after{
+  content:"";
+  position:absolute;left:0;right:0;bottom:.02em;
+  height:2px;background:currentColor;
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .5s cubic-bezier(.16,1,.3,1);
+}
+.hero-title em:hover::after,
+.hero-title em:focus-visible::after{transform:scaleX(1)}
+@media (prefers-reduced-motion:reduce){
+  .hero-title em.wave .ch{animation:none}
+  .hero-title em::after{transition:none}
+}
+.hero-meta{display:flex;flex-direction:column;gap:1.4rem}
+.hero-rule{height:1px;background:var(--rule);transform:scaleX(0);transform-origin:left}
+
+.scroll-hint{
+  margin-top:clamp(2rem,6vw,4.5rem);
+  display:flex;justify-content:space-between;align-items:center;
+  border-top:1px solid var(--rule);padding-top:1rem;
+}
+.scroll-hint span{font-family:var(--mono);font-size:.65rem;letter-spacing:.14em;text-transform:uppercase;color:var(--paper-dim)}
+
+/* ---------- reveal ---------- */
+.reveal{opacity:0;transform:translateY(28px)}
+
+/* ---------- section frame ---------- */
+section{z-index:2;position:relative;padding-block:clamp(5rem,12vw,11rem)}
+.sec-head{
+  text-align:center;
+  display:grid;gap:.9rem;
+  justify-items:center;
+  padding-top:1.4rem;
+  margin-bottom:clamp(2.5rem,6vw,5rem);
+}
+.sec-head > p:last-child{max-width:52ch;margin-inline:auto}
+
+/* ---------- work grid ---------- */
+#work-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));
+  gap:clamp(1.5rem,3vw,3rem) clamp(1.25rem,2.4vw,2.5rem);
+}
+.card{position:relative;display:block}
+.card-media{
+  position:relative;
+  aspect-ratio:4/5;
+  overflow:hidden;
+  border-radius:22px;
+  border:1px solid rgba(237,233,227,.10);
+  background:var(--ink-2);
+  box-shadow:0 18px 44px -18px rgba(0,0,0,.55);
+}
+.card-media canvas,
+.card-media img{
+  position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;
+  border-radius:inherit;
+}
+.card-num{
+  position:absolute;top:1.1rem;left:1.1rem;z-index:2;
+  font-family:var(--mono);font-size:.65rem;letter-spacing:.1em;
+  color:var(--paper);mix-blend-mode:difference;
+}
+.card-body{
+  display:flex;justify-content:space-between;gap:1rem;
+  margin-top:.9rem;padding-top:.9rem;
+  border-top:1px solid var(--rule);
+}
+.card-title{font-family:var(--display);font-size:1.15rem;font-weight:400;line-height:1.15;margin:0}
+.card-tag{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-dim);white-space:nowrap;padding-top:.25rem}
+
+/* ---------- frosted glass ---------- */
+/* Glass only works where there is imagery behind it to refract. */
+
+/* 1. Project card: a frosted plate rises over the image on hover. */
+.card-plate{
+  position:absolute;left:0;right:0;bottom:0;z-index:3;
+  border-radius:0 0 21px 21px;
+  padding:.85rem .95rem 1rem;
+  background:linear-gradient(to top,
+    rgba(12,10,10,.96) 0%,
+    rgba(12,10,10,.90) 58%,
+    rgba(12,10,10,.60) 100%);
+  backdrop-filter:blur(22px) saturate(1.3);
+  -webkit-backdrop-filter:blur(22px) saturate(1.3);
+  border-top:1px solid rgba(237,233,227,.14);
+  transform:translateY(102%);
+  opacity:0;
+  transition:transform .62s cubic-bezier(.16,1,.3,1),opacity .42s ease;
+  pointer-events:none;
+}
+.card:hover .card-plate,
+.card:focus-visible .card-plate{transform:translateY(0);opacity:1}
+.card-plate b{
+  display:block;font-family:var(--display);font-weight:400;
+  font-size:1.02rem;line-height:1.15;color:#F6F3EE;
+}
+.card-plate span{
+  display:block;margin-top:.3rem;
+  font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;
+  text-transform:uppercase;color:rgba(246,243,238,.88);
+}
+.card-plate i{
+  position:absolute;right:.95rem;bottom:1rem;
+  font-style:normal;font-family:var(--mono);font-size:.7rem;
+  color:var(--signal);
+}
+
+/* 2. Hero lede sits on frosted glass — there is a backdrop image behind it. */
+.hero-meta .glass{
+  padding:1.15rem 1.25rem 1.25rem;
+  background:linear-gradient(150deg,
+    rgba(16,14,13,.66) 0%,
+    rgba(16,14,13,.54) 55%,
+    rgba(16,14,13,.62) 100%);
+  backdrop-filter:blur(22px) saturate(1.2);
+  -webkit-backdrop-filter:blur(22px) saturate(1.2);
+  border:1px solid rgba(237,233,227,.12);
+  border-radius:2px;
+  position:relative;
+  overflow:hidden;
+}
+/* Specular sheen along the top edge, the way real glass catches light. */
+.hero-meta .glass::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(to right,
+    rgba(237,233,227,0) 0%,
+    rgba(237,233,227,.45) 22%,
+    rgba(237,233,227,.10) 60%,
+    rgba(237,233,227,0) 100%);
+}
+@media(max-width:760px){
+  .hero-meta .glass{padding:1rem 1.05rem 1.1rem}
+}
+
+
+@supports not (backdrop-filter: blur(1px)){
+  .card-plate{background:rgba(18,16,15,.88)}
+  .hero-meta .glass{background:rgba(20,18,17,.72)}
+}
+
+/* filters */
+.filters{justify-content:center;display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:clamp(1.75rem,4vw,3rem)}
+.filters button{
+  position:relative;
+  font-family:var(--mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;
+  padding:.55rem 1.05rem;border:none;border-radius:100px;
+  color:var(--paper);
+  background:linear-gradient(157deg,
+    rgba(255,255,255,.07) 0%,
+    rgba(255,255,255,.02) 50%,
+    rgba(255,255,255,.05) 100%);
+  backdrop-filter:brightness(1.08) saturate(1.15);
+  -webkit-backdrop-filter:brightness(1.08) saturate(1.15);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,.55),
+    inset 0 -1px 0 0 rgba(255,255,255,.20),
+    inset 0 5px 10px -7px rgba(255,255,255,.35),
+    0 6px 16px -6px rgba(0,0,0,.50);
+  transition:color .3s,background .3s,transform .3s,box-shadow .3s;
+}
+.filters button::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;
+  background:linear-gradient(150deg,
+    rgba(255,255,255,.80) 0%, rgba(255,255,255,.20) 30%,
+    rgba(255,255,255,.10) 60%, rgba(255,255,255,.50) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  pointer-events:none;
+}
+.filters button:hover{transform:translateY(-1px)}
+.filters button[aria-pressed="true"]{color:var(--ink);background:var(--paper);border-color:var(--paper)}
+.filters button:hover{color:var(--paper);border-color:var(--paper-dim)}
+
+.grid-empty{
+  grid-column:1/-1;padding:3rem 0;
+  border-top:1px solid var(--rule);
+  color:var(--paper-dim);
+}
+.grid-empty a{color:var(--signal);text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- marquee ---------- */
+.marquee{
+  border-block:1px solid var(--rule);
+  padding-block:1.15rem;
+  overflow:hidden;
+  white-space:nowrap;
+}
+.marquee-track{display:inline-flex;gap:3rem;will-change:transform}
+.marquee span{
+  font-family:var(--display);font-size:clamp(1.4rem,3.5vw,2.6rem);
+  font-weight:300;color:var(--paper-dim);
+}
+.marquee span::after{content:"—";margin-left:3rem;color:var(--rule)}
+
+/* ---------- capability list ---------- */
+.cap{
+  display:grid;gap:.5rem;
+  padding-block:clamp(1.4rem,3vw,2.2rem);
+  position:relative;
+  margin-bottom:.85rem;
+}
+@media(min-width:820px){
+  .cap{grid-template-columns:4rem .34fr 1fr;gap:2rem;align-items:baseline}
+}
+.cap-i{
+  display:block;width:2rem;height:1px;background:var(--signal);
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .6s cubic-bezier(.16,1,.3,1);
+}
+.cap:hover .cap-i{transform:scaleX(1)}
+@media(max-width:819px){.cap-i{transform:scaleX(1);margin-bottom:.5rem}}
+.cap h3{font-family:var(--display);font-weight:400;font-size:clamp(1.3rem,1rem + 1vw,1.9rem);margin:0;line-height:1.1}
+/* ---------- dock magnification ---------- */
+/* Letters scale by distance from the cursor, the way the macOS Dock does. */
+.mag{display:inline-block;white-space:nowrap}
+.mag .mch{
+  display:inline-block;
+  transform-origin:50% 100%;
+  will-change:transform;
+  transition:transform .34s cubic-bezier(.22,1,.36,1);
+}
+.mag.live .mch{transition:transform .09s linear}
+
+/* On touch there is no cursor to magnify from, so these ripple once when
+   they scroll into view instead — the same gesture as the hero word. */
+.mag.wave .mch{
+  transition:none;
+  animation:heroWave .78s cubic-bezier(.28,.9,.34,1) both;
+}
+@media (prefers-reduced-motion:reduce){
+  .mag .mch{transition:none !important;transform:none !important;animation:none !important}
+}
+.cap p{margin:0;color:var(--paper-dim);max-width:56ch}
+
+/* ---------- about ---------- */
+.about-grid{display:grid;gap:clamp(2rem,5vw,4rem)}
+@media(min-width:900px){.about-grid{grid-template-columns:.55fr .45fr}}
+.stat-row{display:flex;gap:clamp(1.5rem,4vw,3.5rem);flex-wrap:wrap;margin-top:2.5rem}
+.stat{border-top:1px solid var(--rule);padding-top:.75rem;min-width:7rem}
+.stat b{display:block;font-family:var(--display);font-size:clamp(1.8rem,1.2rem + 1.6vw,2.8rem);font-weight:300;line-height:1}
+.stat span{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--paper-dim)}
+.stat-note{text-align:center;
+  font-family:var(--mono);font-size:.63rem;letter-spacing:.02em;
+  color:var(--paper-dim);opacity:.72;margin:1.1rem 0 0;max-width:38ch;
+}
+.stat-note::before{content:"* ";color:var(--signal);opacity:1}
+
+/* accent on the phrases that carry the message */
+.hi{font-style:normal;color:var(--signal)}
+
+/* ---------- glass panels ---------- */
+/* One shared treatment for every text block: frosted over the dot field. */
+/* ---------- CLEAR GLASS ----------
+   Reference behaviour: the background reads straight through, sharp and
+   undistorted. There is NO blur — blur is what makes glass frosted. What
+   makes it read as glass is entirely the edge treatment:
+     1. a bright specular hairline along the top rim
+     2. visible thickness: an inner bevel, light at top, dark at bottom
+     3. a caustic glow where light exits the lower edge
+     4. a soft drop shadow so the pane sits above the surface
+   Only a whisper of tint, just enough to guarantee text contrast.          */
+.glassy{
+  position:relative;
+  border-radius:22px;
+  padding:clamp(1.1rem,2.6vw,1.8rem);
+
+  /* Barely-there tint. Clear glass is nearly invisible in the middle. */
+  background:transparent;
+
+  /* Thickness: bright top-left bevel, dark bottom-right, plus the drop. */
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,.55),          /* top specular line   */
+    inset 1px 0 0 0 rgba(255,255,255,.16),          /* left bevel          */
+    inset -1px 0 0 0 rgba(255,255,255,.10),         /* right bevel         */
+    inset 0 -1px 0 0 rgba(255,255,255,.22),         /* bottom light escape */
+    inset 0 8px 18px -10px rgba(255,255,255,.30),   /* inner top glow      */
+    inset 0 -14px 22px -14px rgba(255,255,255,.18), /* caustic pool        */
+    0 18px 44px -14px rgba(0,0,0,.55),              /* drop shadow         */
+    0 2px 8px rgba(0,0,0,.30);
+  border:none;
+}
+
+/* Rim: a hairline that follows the rounded shape, brightest at the top-left
+   where light enters, fading around the form. Drawn as a gradient border via
+   mask so it can vary in intensity around the perimeter — a flat 1px border
+   is what made previous versions look like a drawn rectangle. */
+.mag-view{
+  position:absolute;inset:0;border-radius:inherit;
+  overflow:hidden;pointer-events:none;z-index:1;
+  opacity:0;transition:opacity .6s ease;
+  /* Opaque base lives here, beneath the magnified canvas, so the panel's own
+     background cannot paint over the magnified view. */
+  background:#0B0B0C;   /* fully opaque: the magnified copy replaces the view */
+}
+.mag-view canvas{
+  display:block;
+  position:absolute;inset:0;
+  width:100%;height:100%;
+}
+body.mag-on .mag-view{opacity:1}
+.glassy > *:not(.mag-view){position:relative;z-index:3}
+.glassy::after{z-index:2}
+.brief > *:not(.mag-view){position:relative;z-index:3}
+.filters button > *:not(.mag-view){position:relative;z-index:3}
+.filters button{overflow:hidden}
+
+.glassy::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  padding:1px;
+  background:linear-gradient(150deg,
+    rgba(255,255,255,.75) 0%,
+    rgba(255,255,255,.22) 22%,
+    rgba(255,255,255,.06) 46%,
+    rgba(255,255,255,.14) 72%,
+    rgba(255,255,255,.45) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  pointer-events:none;
+  z-index:2;
+}
+
+/* Specular highlight: a soft elongated gleam across the upper surface, the
+   reflection of a light source on the glass rather than a lit edge. */
+.glassy::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  background:
+    radial-gradient(80% 45% at 24% -8%,
+      rgba(255,255,255,.16) 0%,
+      rgba(255,255,255,.05) 40%,
+      rgba(255,255,255,0) 72%),
+    radial-gradient(52% 30% at 82% 104%,
+      rgba(255,255,255,.10) 0%,
+      rgba(255,255,255,0) 68%);
+  pointer-events:none;
+  z-index:1;
+}
+.glassy > *{position:relative;z-index:3}
+
+@supports not (backdrop-filter: blur(1px)){
+  .card-plate{background:rgba(18,16,15,.88)}
+  .hero-meta .glass{background:rgba(20,18,17,.72)}
+}
+
+/* filters */
+.filters{justify-content:center;display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:clamp(1.75rem,4vw,3rem)}
+.filters button:hover{transform:translateY(-1px)}
+@supports not (backdrop-filter: blur(1px)){
+  .filters button{background:rgba(16,15,14,.82)}
+}
+.filters button[aria-pressed="true"]{color:var(--ink);background:var(--paper);border-color:var(--paper)}
+.filters button:hover{color:var(--paper);border-color:var(--paper-dim)}
+
+.grid-empty{
+  grid-column:1/-1;padding:3rem 0;
+  border-top:1px solid var(--rule);
+  color:var(--paper-dim);
+}
+.grid-empty a{color:var(--signal);text-decoration:underline;text-underline-offset:3px}
+
+/* ---------- marquee ---------- */
+.marquee{
+  border-block:1px solid var(--rule);
+  padding-block:1.15rem;
+  overflow:hidden;
+  white-space:nowrap;
+}
+.marquee-track{display:inline-flex;gap:3rem;will-change:transform}
+.marquee span{
+  font-family:var(--display);font-size:clamp(1.4rem,3.5vw,2.6rem);
+  font-weight:300;color:var(--paper-dim);
+}
+.marquee span::after{content:"—";margin-left:3rem;color:var(--rule)}
+
+/* ---------- capability list ---------- */
+.cap{
+  display:grid;gap:.5rem;
+  padding-block:clamp(1.4rem,3vw,2.2rem);
+  position:relative;
+  margin-bottom:.85rem;
+}
+@media(min-width:820px){
+  .cap{grid-template-columns:4rem .34fr 1fr;gap:2rem;align-items:baseline}
+}
+.cap-i{
+  display:block;width:2rem;height:1px;background:var(--signal);
+  transform:scaleX(0);transform-origin:left;
+  transition:transform .6s cubic-bezier(.16,1,.3,1);
+}
+.cap:hover .cap-i{transform:scaleX(1)}
+@media(max-width:819px){.cap-i{transform:scaleX(1);margin-bottom:.5rem}}
+.cap h3{font-family:var(--display);font-weight:400;font-size:clamp(1.3rem,1rem + 1vw,1.9rem);margin:0;line-height:1.1}
+/* ---------- dock magnification ---------- */
+/* Letters scale by distance from the cursor, the way the macOS Dock does. */
+.mag{display:inline-block;white-space:nowrap}
+
+/* On touch there is no cursor to magnify from, so these ripple once when
+   they scroll into view instead — the same gesture as the hero word. */
+.mag.wave .mch{
+  transition:none;
+  animation:heroWave .78s cubic-bezier(.28,.9,.34,1) both;
+}
+@media (prefers-reduced-motion:reduce){
+  .mag .mch{transition:none !important;transform:none !important;animation:none !important}
+}
+.cap p{margin:0;color:var(--paper-dim);max-width:56ch}
+
+/* ---------- about ---------- */
+.about-grid{display:grid;gap:clamp(2rem,5vw,4rem)}
+@media(min-width:900px){.about-grid{grid-template-columns:.55fr .45fr}}
+.stat-row{display:flex;gap:clamp(1.5rem,4vw,3.5rem);flex-wrap:wrap;margin-top:2.5rem}
+.stat{border-top:1px solid var(--rule);padding-top:.75rem;min-width:7rem}
+.stat b{display:block;font-family:var(--display);font-size:clamp(1.8rem,1.2rem + 1.6vw,2.8rem);font-weight:300;line-height:1}
+.stat span{font-family:var(--mono);font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;color:var(--paper-dim)}
+.stat-note{text-align:center;
+  font-family:var(--mono);font-size:.63rem;letter-spacing:.02em;
+  color:var(--paper-dim);opacity:.72;margin:1.1rem 0 0;max-width:38ch;
+}
+.stat-note::before{content:"* ";color:var(--signal);opacity:1}
+
+/* accent on the phrases that carry the message */
+.hi{font-style:normal;color:var(--signal)}
+
+/* ---------- glass panels ---------- */
+/* One shared treatment for every text block: frosted over the dot field. */
+
+
+.glassy::before{
+  content:"";position:absolute;left:0;right:0;top:0;height:1px;
+  background:linear-gradient(to right,
+    rgba(237,233,227,0) 0%,
+    rgba(237,233,227,.70) 16%,
+    rgba(237,233,227,.14) 52%,
+    rgba(237,233,227,0) 100%);
+  pointer-events:none;
+}
+/* Lens rim: an inner ring of compressed, brightened backdrop — the way light
+   piles up at the thick edge of real glass. Plus the caustic pool. */
+.glassy::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;
+  background:
+    radial-gradient(60% 42% at 22% 0%,
+      rgba(237,233,227,.10) 0%, rgba(237,233,227,0) 70%),
+    radial-gradient(132% 104% at 50% 50%,
+      rgba(237,233,227,0) 42%,
+      rgba(237,233,227,.09) 70%,
+      rgba(237,233,227,.20) 88%,
+      rgba(237,233,227,.30) 97%,
+      rgba(237,233,227,.10) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(237,233,227,.08),
+    inset 0 0 26px rgba(237,233,227,.07);
+  pointer-events:none;
+}
+@supports not (backdrop-filter: blur(1px)){
+  .glassy{background:rgba(16,15,14,.82)}
+}
+
+
+
+/* ---------- project brief ---------- */
+.brief{
+  position:relative;
+  margin-top:clamp(2.5rem,6vw,4.5rem);
+  border-radius:22px;
+  padding:clamp(1.5rem,3.5vw,2.5rem);
+  text-align:left;
+  border:none;
+  background:linear-gradient(157deg,
+    rgba(255,255,255,.055) 0%,
+    rgba(255,255,255,.018) 38%,
+    rgba(255,255,255,.010) 62%,
+    rgba(255,255,255,.040) 100%);
+  backdrop-filter:brightness(1.06) saturate(1.15);
+  -webkit-backdrop-filter:brightness(1.06) saturate(1.15);
+  box-shadow:
+    inset 0 1px 0 0 rgba(255,255,255,.55),
+    inset 1px 0 0 0 rgba(255,255,255,.16),
+    inset -1px 0 0 0 rgba(255,255,255,.10),
+    inset 0 -1px 0 0 rgba(255,255,255,.22),
+    inset 0 8px 18px -10px rgba(255,255,255,.30),
+    inset 0 -14px 22px -14px rgba(255,255,255,.18),
+    0 18px 44px -14px rgba(0,0,0,.55),
+    0 2px 8px rgba(0,0,0,.30);
+}
+.brief::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;
+  background:linear-gradient(150deg,
+    rgba(255,255,255,.75) 0%, rgba(255,255,255,.22) 22%,
+    rgba(255,255,255,.06) 46%, rgba(255,255,255,.14) 72%,
+    rgba(255,255,255,.45) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite:exclude;
+  pointer-events:none;z-index:2;
+}
+.brief > *{position:relative;z-index:3}
+
+.brief-head{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem}
+#brief-questions,#brief-done{text-align:center}
+#brief .brief-opts{text-align:left}
+#brief .brief-nav{justify-content:center}
+#brief .brief-count{margin-left:0}
+.brief-step{font-family:var(--mono);font-size:.6rem;letter-spacing:.14em;text-transform:uppercase;color:var(--paper-dim)}
+.brief-q{
+  font-family:var(--display);font-weight:300;
+  font-size:clamp(1.45rem,1.1rem + 1.5vw,2.3rem);
+  line-height:1.05;letter-spacing:-.015em;margin:.5rem 0 .35rem;
+}
+.brief-hint{font-size:.86rem;color:var(--paper-dim);margin:0 0 1.4rem}
+
+.brief-opts{display:grid;gap:.55rem;grid-template-columns:repeat(auto-fit,minmax(min(100%,215px),1fr))}
+.brief-opt{
+  text-align:left;position:relative;
+  padding:.9rem 2.4rem .9rem 1rem;
+  border:1px solid var(--rule);
+  background:rgba(237,233,227,.02);
+  color:var(--paper);
+  display:flex;flex-direction:column;gap:.22rem;
+  transition:border-color .28s,background .28s,transform .28s cubic-bezier(.16,1,.3,1);
+}
+.brief-opt:hover{border-color:var(--paper-dim);background:rgba(237,233,227,.055);transform:translateY(-2px)}
+.brief-opt b{font-family:var(--body);font-weight:500;font-size:.94rem;line-height:1.2}
+.brief-opt span{font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;color:var(--paper-dim)}
+/* selection mark */
+.brief-opt::after{
+  content:"";position:absolute;right:.95rem;top:50%;
+  width:15px;height:15px;margin-top:-7.5px;
+  border:1px solid var(--rule);border-radius:50%;
+  transition:border-color .25s,background .25s,box-shadow .25s;
+}
+.brief-opt[data-multi="1"]::after{border-radius:3px}
+.brief-opt[aria-pressed="true"]{border-color:var(--signal);background:rgba(193,73,83,.12)}
+.brief-opt[aria-pressed="true"]::after{
+  border-color:var(--signal);background:var(--signal);
+  box-shadow:inset 0 0 0 2px var(--ink);
+}
+.brief-opt[data-exclusive="1"][aria-pressed="true"] ~ .brief-opt{opacity:.4}
+
+.brief-nav{display:flex;gap:.7rem;align-items:center;margin-top:1.5rem;flex-wrap:wrap}
+.brief-btn{
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.12em;text-transform:uppercase;
+  padding:.65rem 1.15rem;border:1px solid var(--rule);color:var(--paper-dim);
+  transition:color .28s,border-color .28s,background .28s,opacity .28s;
+}
+.brief-btn:hover:not(:disabled){color:var(--paper);border-color:var(--paper-dim)}
+.brief-btn.primary{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.brief-btn.primary:hover:not(:disabled){opacity:.88;color:var(--ink)}
+.brief-btn:disabled{opacity:.3;cursor:not-allowed}
+.brief-count{font-family:var(--mono);font-size:.6rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--paper-dim);margin-left:auto}
+
+.brief-bar{height:1px;background:var(--rule);margin-top:1.5rem;position:relative;overflow:hidden}
+.brief-bar i{position:absolute;inset:0;background:var(--signal);transform-origin:left;
+  transform:scaleX(0);transition:transform .55s cubic-bezier(.16,1,.3,1)}
+
+/* fade/slide between questions */
+.brief-stage{transition:opacity .3s ease,transform .3s cubic-bezier(.16,1,.3,1)}
+.brief-stage.out{opacity:0;transform:translateY(10px)}
+
+.brief-summary{display:grid;gap:0;margin:1.2rem 0 0}
+.brief-row{display:flex;gap:1.5rem;justify-content:space-between;align-items:baseline;
+  border-bottom:1px solid var(--rule);padding:.7rem 0}
+.brief-row:first-child{border-top:1px solid var(--rule)}
+.brief-row dt{font-family:var(--mono);font-size:.58rem;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--paper-dim);margin:0;white-space:nowrap}
+.brief-row dd{margin:0;font-size:.94rem;text-align:right}
+.brief-row button{
+  font-family:var(--mono);font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--paper-dim);border-bottom:1px solid transparent;margin-left:.75rem;
+}
+.brief-row button:hover{color:var(--signal);border-bottom-color:var(--signal)}
+
+.brief-panel{display:none}
+.brief-panel.on{display:block}
+
+@media(max-width:600px){
+  .brief-row{flex-direction:column;gap:.25rem}
+  .brief-row dd{text-align:left}
+  .brief-nav .brief-count{margin-left:0;width:100%}
+}
+
+/* ---------- contact ---------- */
+#contact{padding-bottom:clamp(3rem,8vw,6rem)}
+.mailto{
+  display:inline-block;
+  font-family:var(--display);font-weight:300;
+  font-size:clamp(1.9rem,1rem + 4.6vw,5.2rem);
+  line-height:1;letter-spacing:-.02em;
+  margin-block:1.5rem 2.5rem;
+  position:relative;
+}
+.mailto::after{
+  content:"";position:absolute;left:0;right:0;bottom:.08em;height:1px;
+  background:var(--paper);transform:scaleX(0);transform-origin:right;
+  transition:transform .6s cubic-bezier(.76,0,.24,1);
+}
+.mailto:hover::after{transform:scaleX(1);transform-origin:left}
+
+footer{position:relative;z-index:2;position:relative;z-index:2;border-top:1px solid var(--rule);padding-block:1.5rem;}
+footer .wrap{text-align:center;display:flex;justify-content:center;flex-wrap:wrap;gap:1rem 2rem}
+footer a,footer p{font-family:var(--mono);font-size:.65rem;letter-spacing:.1em;text-transform:uppercase;color:var(--paper-dim);margin:0}
+footer a:hover{color:var(--paper)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+  .reveal{opacity:1!important;transform:none!important}
+  .hero-title .line > span{transform:none!important}
+  .hero-rule{transform:scaleX(1)!important}
+}
+</style>
+</head>
+<body>
+
+<div id="bg" aria-hidden="true">
+  <canvas id="bg-dots"></canvas>
+  <div id="bg-img"></div>
+  <div id="bg-veil"></div>
+</div>
+
+<div id="loader" aria-hidden="true">
+  <div class="count">00</div>
+  <div class="bar"></div>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+
+  </defs>
+</svg>
+
+<div id="cursor-layer" aria-hidden="true">
+  <div id="cursor-ring"></div>
+  <div id="cursor"></div>
+  <div id="cursor-label"></div>
+</div>
+
+<header>
+  <div class="wrap">
+    <a href="#hero" class="mark">Aram Kapoudjian</a>
+    <nav>
+      <a href="#work">Work</a>
+      <a href="#capabilities">Capabilities</a>
+      <a href="#about">About</a>
+      <a href="#contact" class="nav-cta">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<section id="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <h1 class="h-display hero-title glassy">
+        <span class="line"><span>It doesn't</span></span>
+        <span class="line"><span>exist yet.</span></span>
+        <span class="line"><span>Here it is <em>anyway</em>.</span></span>
+      </h1>
+      <div class="hero-meta">
+        <div class="hero-rule"></div>
+        <div class="glass reveal">
+          <p class="lede" style="margin:0">I make the picture that gets the project <em class="hi">approved, funded, or sold</em>. Stills, animation, and real site context captured by drone.</p>
+          <p class="eyebrow" style="margin:1.1rem 0 0">Available for commissions worldwide</p>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-hint reveal">
+      <span>The work</span>
+      <span data-year></span>
+    </div>
+  </div>
+</section>
+
+<div class="marquee" aria-hidden="true">
+  <div class="marquee-track">
+    <span>Exteriors</span><span>Interiors</span><span>Site context</span><span>Animation</span><span>Aerial capture</span>
+    <span>Exteriors</span><span>Interiors</span><span>Site context</span><span>Animation</span><span>Aerial capture</span>
+  </div>
+</div>
+
+<section id="work">
+  <div class="wrap">
+    <div class="sec-head glassy">
+      <p class="eyebrow">01 — Work</p>
+      <h2 class="h-section reveal">Nobody signs off<br>on a mood board.</h2>
+    </div>
+
+    <div class="filters" id="filters" role="group" aria-label="Filter projects"></div>
+    <div id="work-grid"></div>
+  </div>
+</section>
+
+<section id="capabilities">
+  <div class="wrap">
+    <div class="sec-head glassy">
+      <p class="eyebrow">02 — Capabilities</p>
+      <h2 class="h-section reveal">What you get.</h2>
+    </div>
+
+    <div class="cap reveal glassy">
+      <span class="cap-i" aria-hidden="true"></span>
+      <h3>Exterior &amp; interior stills</h3>
+      <p>For planning boards, investor decks, and pre-sales. Every choice — material, light, time of day — answers a question someone actually asked. Pretty is a side effect.</p>
+    </div>
+    <div class="cap reveal glassy">
+      <span class="cap-i" aria-hidden="true"></span>
+      <h3>Animation &amp; walkthroughs</h3>
+      <p>Camera moves that follow how the building is used: approach, threshold, circulation. Delivered as finished film, or as a real-time scene your client can drive themselves.</p>
+    </div>
+    <div class="cap reveal glassy">
+      <span class="cap-i" aria-hidden="true"></span>
+      <h3>Site context &amp; aerial capture</h3>
+      <p>I fly the site and build it from photographs. Your building sits in the neighbors, the trees, and the real slope — not a stock photo of somewhere that looks similar.</p>
+    </div>
+    <div class="cap reveal glassy">
+      <span class="cap-i" aria-hidden="true"></span>
+      <h3>Landscape &amp; outdoor visualization</h3>
+      <p>Planting, hardscape, pools, everything past the threshold — held to the same standard as the building. Landscape is usually where renders get lazy.</p>
+    </div>
+  </div>
+</section>
+
+<section id="about">
+  <div class="wrap">
+    <div class="sec-head glassy">
+      <p class="eyebrow">03 — About</p>
+      <h2 class="h-section reveal">I read drawings.<br>I don't guess<br>at them.</h2>
+    </div>
+    <div class="about-grid">
+      <div class="reveal">
+        <p>Someone is choosing a cladding. A committee is reading a massing. A buyer is deciding before the foundation is poured. All of them are looking at my image, and none of them care how long it took to render.</p>
+        <p class="dim">My training is architectural, which mostly means I catch the things that would have become a revision. Sets arrive coordinated. Changes are cheap. The model still works six months later when the project moves again.</p>
+        <div class="stat-row">
+          <div class="stat"><b data-count="8">0</b><span>Years at it*</span></div>
+          <div class="stat"><b data-count="40">0</b><span>Projects*</span></div>
+          <div class="stat"><b data-count="12">0</b><span>Cities built in*</span></div>
+        </div>
+        <p class="stat-note">Approximate. I was rendering, not counting.</p>
+      </div>
+      <div class="reveal">
+        <p class="eyebrow" style="margin-bottom:1rem">What I use</p>
+        <p class="dim">3ds Max &middot; Corona &middot; V-Ray &middot; Blender &middot; Unreal Engine &middot; RealityCapture &middot; Photoshop &middot; After Effects</p>
+        <p class="eyebrow" style="margin:2rem 0 1rem">How this works</p>
+        <p class="dim">Direct commissions, plus white-label overflow for studios who need a pair of hands that won't embarrass them. Fixed scope. Fixed price. The date is agreed before I start, not discovered afterwards.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="contact">
+  <div class="wrap" style="text-align:center">
+    <p class="eyebrow">04 — Contact</p>
+    <a class="mailto" href="mailto:hello@example.com" data-cursor-label="Email">Send me something</a>
+    <p class="lede dim">Send plans, a site address, or a sketch on a napkin. I'll come back with <em class="hi">a price and a delivery date</em>.</p>
+
+    <div class="brief" id="brief">
+      <div class="brief-head">
+        <p class="eyebrow" style="margin:0">Not sure what to ask for?</p>
+        <span class="brief-step" id="brief-step">1 / 4</span>
+      </div>
+
+      <div class="brief-stage" id="brief-stage">
+        <div id="brief-questions">
+          <h3 class="brief-q" id="brief-q"></h3>
+          <p class="brief-hint" id="brief-hint"></p>
+          <div class="brief-opts" id="brief-opts" role="group" aria-labelledby="brief-q"></div>
+          <div class="brief-nav">
+            <button type="button" class="brief-btn" id="brief-back" disabled>Back</button>
+            <button type="button" class="brief-btn primary" id="brief-next" disabled>Next</button>
+            <span class="brief-count" id="brief-count"></span>
+          </div>
+        </div>
+
+        <div class="brief-panel" id="brief-done">
+          <h3 class="brief-q" style="margin-bottom:.35rem">That's the brief.</h3>
+          <p class="brief-hint">Change anything you like, then send it over.</p>
+          <dl class="brief-summary" id="brief-summary"></dl>
+          <div class="brief-nav">
+            <a class="brief-btn primary" id="brief-send" href="#">Send this to me</a>
+            <button type="button" class="brief-btn" id="brief-reset">Start over</button>
+          </div>
+          <p class="dim" style="font-size:.82rem;margin-top:1rem">Opens your email app with this filled in.</p>
+        </div>
+      </div>
+
+      <div class="brief-bar"><i id="brief-fill"></i></div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap glassy">
+    <p>© <span data-year></span> Aram Kapoudjian</p>
+    <a href="https://www.behance.net/kapoudjianaram" target="_blank" rel="noopener">Behance ↗</a>
+  </div>
+</footer>
+
+<script src="projects.js" onerror="void 0"></script>
+<script type="module">
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ============ year ============ */
+document.querySelectorAll("[data-year]").forEach(n => n.textContent = new Date().getFullYear());
+
+/* ============ header state ============ */
+(function headerState(){
+  const set = () => document.body.classList.toggle("scrolled", scrollY > 60);
+  addEventListener("scroll", set, {passive:true});
+  set();
+})();
+
+/* ============ project brief ============ */
+(function projectBrief(){
+  const root = document.getElementById("brief");
+  if (!root) return;
+
+  const EMAIL = document.querySelector(".mailto")?.getAttribute("href")
+                  ?.replace("mailto:", "") || "hello@example.com";
+
+  /* Order matters. Ask WHAT the project is before asking whether it exists,
+     because "does it exist yet" is meaningless for landscape — the ground is
+     always already there. Landscape skips the existence question entirely and
+     asks what's on the plot instead. */
+
+  const state = { kind:null, exists:null, existsKey:null, needs:[], stage:null, timing:null };
+
+  const isLandscape = () => state.kind === "Landscape or grounds";
+
+  // Services, filtered by project type and (for buildings) whether it exists.
+  const SERVICES = [
+    { id:"Exterior visuals",    hint:"Stills of the building",       for:["building"], when:["planned"] },
+    { id:"Interior visuals",    hint:"Rooms and finishes",           for:["building"], when:["planned"] },
+    { id:"Animation",           hint:"Flythrough or walkthrough",    for:["building"], when:["planned"] },
+    { id:"Planting & hardscape",hint:"How the grounds will look",    for:["landscape"] },
+    { id:"Pool or outdoor living",hint:"Decks, pools, terraces",     for:["landscape"] },
+    { id:"Aerial capture",      hint:"Drone photo or video",         for:["building","landscape"], when:["built"] },
+    { id:"Site survey",         hint:"Drone map of the plot as-is",  for:["building","landscape"] },
+    { id:"Before / after",      hint:"Show the change proposed",     for:["building","landscape"] },
+  ];
+
+  function services(){
+    const type = isLandscape() ? "landscape" : "building";
+    return SERVICES.filter(s => {
+      if (!s.for.includes(type)) return false;
+      // Landscape has no "does it exist" branch, so `when` doesn't apply.
+      if (isLandscape()) return true;
+      return !s.when || s.when.includes(state.existsKey);
+    }).map(s => [s.id, s.hint]);
+  }
+
+  const steps = [
+    {
+      id: "kind",
+      q: "What's the project?",
+      hint: "This sets everything else.",
+      opts: () => [
+        ["A house",             "Single home or villa"],
+        ["An apartment block",  "Multi-unit residential"],
+        ["Commercial",          "Office, retail, hospitality"],
+        ["Landscape or grounds","Garden, park, outdoor space"],
+      ],
+      get: () => state.kind,
+      set: v => {
+        if (state.kind !== null && state.kind !== v){
+          state.needs = []; state.stage = null;
+          state.exists = state.existsKey = null;
+        }
+        state.kind = v;
+      },
+      summary: () => state.kind,
+    },
+    {
+      id: "exists",
+      // Skipped for landscape — the ground is always already there.
+      skip: () => isLandscape(),
+      q: "Does the building exist yet?",
+      hint: "This decides whether I'm rendering it or filming it.",
+      opts: () => [
+        ["Not yet",  "It's being designed"],
+        ["It does",  "It's standing today"],
+      ],
+      get: () => state.exists,
+      set: v => {
+        const key = v === "Not yet" ? "planned" : "built";
+        if (state.existsKey && state.existsKey !== key){ state.needs = []; state.stage = null; }
+        state.exists = v; state.existsKey = key;
+      },
+      summary: () => state.exists === null ? null
+        : (state.exists === "Not yet" ? "Not built yet" : "Already built"),
+    },
+    {
+      id: "needs",
+      multi: true, max: 3,
+      q: () => isLandscape() ? "What do you need for it?"
+             : state.existsKey === "built" ? "What should I capture?"
+             : "What should I make?",
+      hint: () => isLandscape()
+              ? "Pick up to three."
+              : state.existsKey === "built"
+                ? "It's standing, so this is camera work — pick up to three."
+                : "It doesn't exist yet, so this is visualization — pick up to three.",
+      opts: services,
+      get: () => state.needs,
+      set: v => { state.needs = v; },
+      summary: () => state.needs.join(", "),
+    },
+    {
+      id: "stage",
+      q: () => isLandscape() ? "What's on the plot now?"
+             : state.existsKey === "built" ? "How long has it been there?"
+             : "Where is the design right now?",
+      hint: () => isLandscape() ? "Tells me what I'd be working with on site."
+             : state.existsKey === "built" ? "Tells me what condition to expect."
+             : "Tells me what I'll be working from.",
+      opts: () => isLandscape()
+        ? [["Bare ground",      "Nothing built or planted"],
+           ["Partly landscaped","Some of it exists"],
+           ["Fully established","Mature, being reworked"]]
+        : state.existsKey === "built"
+          ? [["Recently finished","Wrapping up"],
+             ["Standing a while", "Existing building"],
+             ["Being changed",    "Renovation planned or underway"]]
+          : [["Just an idea",     "Sketches, or nothing on paper"],
+             ["In design",        "Drawings exist"],
+             ["Ready to build",   "Documented and permitted"]],
+      get: () => state.stage,
+      set: v => { state.stage = v; },
+      summary: () => state.stage,
+    },
+    {
+      id: "timing",
+      q: "When do you need it?",
+      hint: "An honest answer helps more than an optimistic one.",
+      opts: () => [
+        ["Within two weeks",  "Tight"],
+        ["This month",        "Comfortable"],
+        ["Next few months",   "Relaxed"],
+        ["No fixed date",     "Planning ahead"],
+      ],
+      get: () => state.timing,
+      set: v => { state.timing = v; },
+      summary: () => state.timing,
+    },
+  ];
+
+  const LABELS = { kind:"Project", exists:"Status", needs:"Needs", stage:"Site", timing:"Timing" };
+
+  // Only steps that apply to the current answers.
+  const active = () => steps.filter(S => !S.skip || !S.skip());
+
+  let idx = 0;   // index into active()
+  const $ = id => document.getElementById(id);
+  const stageEl = $("brief-stage");
+  const val = v => typeof v === "function" ? v() : v;
+
+  const ready = S => S.multi ? S.get().length > 0 : S.get() !== null;
+
+  function transition(fn){
+    stageEl.classList.add("out");
+    setTimeout(() => { fn(); stageEl.classList.remove("out"); }, 250);
+  }
+
+  function renderOptions(){
+    const list = active();
+    const S = list[idx];
+    const box = $("brief-opts");
+    box.innerHTML = "";
+
+    val(S.opts).forEach(([label, hint]) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "brief-opt";
+      if (S.multi) b.dataset.multi = "1";
+
+      const cur = S.get();
+      const chosen = S.multi ? cur.includes(label) : cur === label;
+      b.setAttribute("aria-pressed", String(chosen));
+
+      const strong = document.createElement("b"); strong.textContent = label;
+      const small  = document.createElement("span"); small.textContent = hint;
+      b.append(strong, small);
+
+      if (S.multi && !chosen && cur.length >= S.max){
+        b.disabled = true; b.style.opacity = ".38";
+      }
+
+      b.addEventListener("click", () => {
+        if (S.multi){
+          const l = [...S.get()];
+          const at = l.indexOf(label);
+          if (at >= 0) l.splice(at, 1);
+          else if (l.length < S.max) l.push(label);
+          S.set(l); renderOptions(); updateNav();
+        } else {
+          S.set(label); renderOptions(); updateNav();
+          setTimeout(next, 230);
+        }
+      });
+      box.appendChild(b);
+    });
+  }
+
+  function updateNav(){
+    const list = active();
+    const S = list[idx];
+    $("brief-back").disabled = idx === 0;
+    $("brief-next").disabled = !ready(S);
+    $("brief-next").textContent = idx === list.length - 1 ? "See the brief" : "Next";
+    $("brief-count").textContent = S.multi ? `${S.get().length} of ${S.max} selected` : "";
+  }
+
+  function render(){
+    const list = active();
+    if (idx >= list.length) idx = list.length - 1;
+    const S = list[idx];
+    $("brief-step").textContent = `${idx + 1} / ${list.length}`;
+    $("brief-q").textContent = val(S.q);
+    $("brief-hint").textContent = val(S.hint);
+    $("brief-fill").style.transform = `scaleX(${(idx / list.length).toFixed(3)})`;
+    renderOptions(); updateNav();
+  }
+
+  function next(){
+    const list = active();
+    if (!ready(list[idx])) return;
+    if (idx < list.length - 1) transition(() => { idx++; render(); });
+    else transition(finish);
+  }
+
+  function emailBody(){
+    const lines = active()
+      .map(S => { const v = S.summary(); return v ? `${LABELS[S.id]}: ${v}` : null; })
+      .filter(Boolean);
+    return ["Hi Aram,","","Here's what I'm after:","",...lines,"","A bit more about it:","",""].join("\n");
+  }
+
+  function finish(){
+    $("brief-questions").style.display = "none";
+    $("brief-done").classList.add("on");
+    $("brief-step").textContent = "Ready";
+    $("brief-fill").style.transform = "scaleX(1)";
+
+    const dl = $("brief-summary");
+    dl.innerHTML = "";
+    active().forEach((S, i) => {
+      const v = S.summary();
+      if (!v) return;
+      const row = document.createElement("div"); row.className = "brief-row";
+      const dt = document.createElement("dt"); dt.textContent = LABELS[S.id];
+      const dd = document.createElement("dd"); dd.textContent = v;
+      const edit = document.createElement("button");
+      edit.type = "button"; edit.textContent = "change";
+      edit.addEventListener("click", () => {
+        $("brief-done").classList.remove("on");
+        $("brief-questions").style.display = "";
+        transition(() => { idx = i; render(); });
+      });
+      dd.appendChild(edit);
+      row.append(dt, dd); dl.appendChild(row);
+    });
+
+    $("brief-send").setAttribute("href",
+      `mailto:${EMAIL}?subject=${encodeURIComponent("Project brief")}` +
+      `&body=${encodeURIComponent(emailBody())}`);
+  }
+
+  $("brief-next").addEventListener("click", next);
+  $("brief-back").addEventListener("click", () => {
+    if (idx > 0) transition(() => { idx--; render(); });
+  });
+  $("brief-reset").addEventListener("click", () => {
+    state.kind = state.exists = state.existsKey = state.stage = state.timing = null;
+    state.needs = [];
+    idx = 0;
+    $("brief-done").classList.remove("on");
+    $("brief-questions").style.display = "";
+    transition(render);
+  });
+
+  render();
+})();
+
+/* ============ proximity magnification ============ */
+(function proximityMagnify(){
+  if (RM) return;
+
+  const TOUCH = !matchMedia("(hover:hover)").matches;
+
+  // A single global pointer drives every target, so the effect builds as the
+  // cursor approaches rather than snapping on when it lands on the text.
+  const RADIUS  = 190;   // px of influence, measured in 2D from each letter
+  const PEAK    = 0.72;  // max extra scale directly under the cursor
+  const LIFT    = 3;     // px of rise at the crest
+  const VBIAS   = 1.15;  // vertical distance counts slightly more
+
+  const targets = [];
+
+  function prepare(el){
+    if (el.dataset.mag) return null;
+    el.dataset.mag = "1";
+    const text = el.textContent;
+    el.textContent = "";
+    el.classList.add("mag");
+    el.setAttribute("aria-label", text);
+    return [...text].map(ch => {
+      const s = document.createElement("span");
+      s.className = "mch";
+      s.textContent = ch;
+      s.setAttribute("aria-hidden", "true");
+      if (ch === " ") s.style.whiteSpace = "pre";
+      el.appendChild(s);
+      return s;
+    });
+  }
+
+  document.querySelectorAll(
+    ".eyebrow, .card-tag, .stat span, .filters button, footer a, footer p, .scroll-hint span"
+  ).forEach(el => {
+    const chars = prepare(el);
+    if (chars) targets.push({ el, chars, pts: null, box: null });
+  });
+  if (!targets.length) return;
+
+  /* ---- touch: ripple once on entry, no pointer tracking at all ---- */
+  if (TOUCH){
+    const STEP = 38;   // ms between letters
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (!en.isIntersecting) return;
+        const el = en.target;
+        io.unobserve(el);
+        const chars = [...el.querySelectorAll(".mch")];
+        chars.forEach((c, i) => { c.style.animationDelay = (i * STEP) + "ms"; });
+        el.classList.add("wave");
+        setTimeout(() => {
+          el.classList.remove("wave");
+          chars.forEach(c => { c.style.animationDelay = ""; });
+        }, STEP * chars.length + 900);
+      });
+    }, { threshold: 0.6, rootMargin: "0px 0px -8% 0px" });
+    targets.forEach(t => io.observe(t.el));
+    return;
+  }
+
+  let px = -9999, py = -9999, raf = null, dirty = true;
+
+  const invalidate = () => { dirty = true; };
+  addEventListener("resize", invalidate, {passive:true});
+  addEventListener("scroll", invalidate, {passive:true});
+
+  function measure(){
+    targets.forEach(t => {
+      const b = t.el.getBoundingClientRect();
+      t.box = b;
+      // Skip offscreen elements entirely — cheap and avoids stale geometry.
+      if (b.bottom < -200 || b.top > innerHeight + 200){ t.pts = null; return; }
+      t.pts = t.chars.map(c => {
+        const r = c.getBoundingClientRect();
+        return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+      });
+    });
+    dirty = false;
+  }
+
+  function frame(){
+    raf = null;
+    if (dirty) measure();
+
+    targets.forEach(t => {
+      if (!t.pts){ return; }
+      const b = t.box;
+      // Coarse reject: if the cursor is far from the whole element, reset once.
+      const nearX = px > b.left - RADIUS && px < b.right + RADIUS;
+      const nearY = py > b.top - RADIUS / VBIAS && py < b.bottom + RADIUS / VBIAS;
+      if (!nearX || !nearY){
+        if (t.el.dataset.on === "1"){
+          t.el.dataset.on = "0";
+          t.el.classList.remove("live");
+          t.chars.forEach(c => { c.style.transform = ""; c.style.color = ""; });
+        }
+        return;
+      }
+      t.el.dataset.on = "1";
+      t.el.classList.add("live");
+
+      t.chars.forEach((c, i) => {
+        const p = t.pts[i];
+        const dx = px - p.x;
+        const dy = (py - p.y) * VBIAS;
+        const d  = Math.sqrt(dx*dx + dy*dy);
+        // Cosine falloff, squared — gentle shoulders, no hard edge.
+        const f = d < RADIUS ? Math.cos((d / RADIUS) * Math.PI * 0.5) : 0;
+        const k = f * f * f * 0.55 + f * f * 0.45;
+        if (k < 0.002){
+          if (c.style.transform){ c.style.transform = ""; c.style.color = ""; }
+          return;
+        }
+        const e2 = k * energy;            // transient: fades as movement stops
+        if (e2 < 0.002){
+          if (c.style.transform){ c.style.transform = ""; c.style.color = ""; }
+          return;
+        }
+        c.style.transform =
+          `translateY(${(-LIFT * e2).toFixed(2)}px) scale(${(1 + PEAK * e2).toFixed(3)})`;
+        c.style.color = `rgba(237,233,227,${(0.60 + 0.40 * e2).toFixed(2)})`;
+      });
+    });
+  }
+
+  // Movement energy: rises while the pointer moves, decays when it stops.
+  // The magnification is scaled by this, so the effect is transient.
+  let energy = 0, lastX = -9999, lastY = -9999, decaying = false;
+
+  // One persistent loop. Energy always decays; pointermove tops it back up.
+  // That makes the magnification a ripple that follows the cursor and fades
+  // the moment it stops, rather than a lens held in place.
+  (function tick(){
+    if (energy > 0){
+      energy *= 0.80;
+      if (energy < 0.02){
+        energy = 0;
+        targets.forEach(t => {
+          if (t.el.dataset.on === "1"){
+            t.el.dataset.on = "0";
+            t.el.classList.remove("live");
+            t.chars.forEach(c => { c.style.transform = ""; c.style.color = ""; });
+          }
+        });
+      } else {
+        frame();
+      }
+    }
+    requestAnimationFrame(tick);
+  })();
+  function pump(){}
+
+  addEventListener("pointermove", e => {
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    const moved = (lastX < -9000) ? 30 : Math.sqrt(dx*dx + dy*dy);
+    lastX = e.clientX; lastY = e.clientY;
+    px = e.clientX; py = e.clientY;
+    // Any real movement tops the energy back up.
+    energy = Math.min(1, energy + Math.min(moved / 18, 1) * 0.9 + 0.2);
+    if (!raf) raf = requestAnimationFrame(frame);
+    pump();
+  }, {passive:true});
+
+  // Cursor leaving the window must clear everything.
+  addEventListener("pointerleave", () => {
+    px = py = -9999;
+    if (!raf) raf = requestAnimationFrame(frame);
+  });
+  document.addEventListener("mouseleave", () => {
+    px = py = -9999;
+    if (!raf) raf = requestAnimationFrame(frame);
+  });
+
+  requestAnimationFrame(measure);
+})();
+
+/* ============ hero word: wave on hover ============ */
+(function heroWave(){
+  const el = document.querySelector(".hero-title em");
+  if (!el) return;
+
+  // Split into per-letter spans once, preserving the original text.
+  const text = el.textContent;
+  el.textContent = "";
+  const chars = [...text].map(ch => {
+    const s = document.createElement("span");
+    s.className = "ch";
+    s.textContent = ch;
+    // keep spaces from collapsing
+    if (ch === " ") s.style.whiteSpace = "pre";
+    el.appendChild(s);
+    return s;
+  });
+  el.setAttribute("aria-label", text);
+  chars.forEach(c => c.setAttribute("aria-hidden", "true"));
+  el.setAttribute("tabindex", "0");
+
+  const STEP = 42;          // ms between letters — the travelling crest
+  let running = false;
+
+  function ripple(){
+    if (RM || running) return;
+    running = true;
+    el.classList.remove("wave");
+    // force reflow so the animation can restart cleanly
+    void el.offsetWidth;
+    chars.forEach((c, i) => { c.style.animationDelay = (i * STEP) + "ms"; });
+    el.classList.add("wave");
+
+    const total = STEP * chars.length + 800;
+    setTimeout(() => {
+      el.classList.remove("wave");
+      chars.forEach(c => { c.style.animationDelay = ""; });
+      running = false;
+    }, total);
+  }
+
+  el.addEventListener("pointerenter", ripple);
+  el.addEventListener("focus", ripple);
+})();
+
+/* ============ dot matrix backdrop ============ */
+const dotMatrix = (function(){
+  const canvas = document.getElementById("bg-dots");
+  if (!canvas || RM) return { set(){} };
+
+  const gl = canvas.getContext("webgl", {alpha:true, antialias:false, depth:false});
+  if (!gl) return { set(){} };
+
+  const VERT = `attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0.,1.);}`;
+
+  /* Measured from the reference: dots sit on a square lattice with a
+     diameter of 0.46 x pitch, and brightness drives dot size the way an
+     LED panel does — dark areas shrink to nothing, highlights bloom. */
+  const FRAG = `
+precision highp float;
+varying vec2 uv;
+uniform vec2  res;
+uniform float pitch, t, reveal;
+uniform vec2  mouse;
+
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+
+/* Every temporal frequency below is an integer multiple of W = 2pi/120.
+   The field is therefore exactly periodic over 120s: t wraps seamlessly. */
+const float W = 0.05235987755982988;
+
+float field(vec2 p){
+  float v = 0.0;
+  v += sin(p.x * 7.5 + p.y * 3.2 - t * (14.0*W)) * 0.55;
+  v += sin(p.x * 4.1 - p.y * 6.8 + t * (10.0*W)) * 0.42;
+  v += sin(p.y * 2.6 + p.x * 1.4 + t * ( 6.0*W)) * 0.34;
+  v += sin(p.x * 13.0 + p.y * 9.5 - t * (22.0*W)) * 0.16;
+
+  // Radial ripple from a source that wanders on a periodic orbit.
+  vec2 c = vec2(0.5 + sin(t * (3.0*W)) * 0.30,
+                0.42 + cos(t * (2.0*W)) * 0.26);
+  float d = length((p - c) * vec2(1.0, 1.25));
+  v += sin(d * 17.0 - t * (26.0*W)) * exp(-d * 1.5) * 0.80;
+  return v;
+}
+
+void main(){
+  vec2 px   = uv * res;
+  vec2 cell = floor(px / pitch);
+  vec2 c    = (cell + 0.5) * pitch;
+  vec2 cuv  = c / res;
+
+  float ar = res.x / res.y;
+  vec2 p = vec2(cuv.x * ar, cuv.y);
+
+  // Slow travel on a huge periodic orbit instead of unbounded linear drift:
+  // same visual march, but returns to its start each cycle with no seam and
+  // no floating-point growth over long sessions.
+  p += vec2(sin(t * W), cos(t * W) * 0.4) * 1.05;
+
+  float v = field(p);
+
+  vec2 m = vec2(mouse.x * ar, mouse.y);
+  float md = length(p - (m + vec2(sin(t * W), cos(t * W) * 0.4) * 1.05));
+  v += exp(-md * md * 12.0) * 0.85;
+
+  float e = smoothstep(-0.75, 0.95, v);
+  e = pow(e, 1.0) * 1.75;
+  e *= smoothstep(cuv.y - 0.30, cuv.y + 0.04, reveal);
+  e = clamp(e, 0.0, 1.0);
+
+  float r = 0.55 * pitch * 0.5;
+  float d = length(px - c);
+  float dot_ = 1.0 - smoothstep(r - 0.6, r + 0.6, d);
+
+  vec3 cold = vec3(0.34, 0.55, 0.84);
+  vec3 warm = vec3(1.00, 0.96, 0.90);
+  vec3 col  = mix(cold, warm, smoothstep(0.12, 0.66, e));
+
+  float jitter = 0.90 + hash(cell) * 0.20;
+  float bright = e * jitter;
+
+  float a = dot_ * clamp(bright * 2.6, 0.0, 1.0);
+  gl_FragColor = vec4(col * bright, a);
+}`;
+
+  function sh(t, src){
+    const s = gl.createShader(t);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  }
+  let prog;
+  try{
+    prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error("link");
+    gl.useProgram(prog);
+  }catch(e){ return { set(){} }; }
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,3,-1,-1,3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, "p");
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+  const U = {};
+  ["res","pitch","t","reveal","mouse"].forEach(n =>
+    U[n] = gl.getUniformLocation(prog, n));
+
+  let dpr = 1, ready = true, revealT = 0;
+  document.body.classList.add("dots-ready");
+  let lastW = 0, lastH = 0, resizeTimer = null;
+  function resize(){
+    dpr = Math.min(devicePixelRatio || 1, 1.5);
+    // Oversize height slightly so the mobile URL bar collapsing (which fires
+    // resize mid-scroll) never forces a canvas rebuild while scrolling.
+    const w = innerWidth, hgt = Math.ceil(innerHeight * 1.22);
+    canvas.width  = Math.max(1, Math.floor(w * dpr));
+    canvas.height = Math.max(1, Math.floor(hgt * dpr));
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    lastW = w; lastH = innerHeight;
+  }
+  resize();
+  addEventListener("resize", () => {
+    // Ignore the small height-only changes the URL bar causes.
+    const dw = Math.abs(innerWidth - lastW);
+    const dh = Math.abs(innerHeight - lastH);
+    if (dw < 2 && dh < lastH * 0.24) { lastH = innerHeight; return; }
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(resize, 180);
+  }, {passive:true});
+
+  // The field is driven purely by time and the pointer. No scroll listener
+  // exists in this module at all, so scrolling cannot influence it.
+  let mx = .5, my = .5, tmx = .5, tmy = .5;
+  addEventListener("pointermove", e => {
+    tmx = e.clientX / innerWidth;
+    tmy = 1 - e.clientY / innerHeight;
+  }, {passive:true});
+
+  function set(){ document.body.classList.add("dots-ready"); }
+
+  const t0 = performance.now();
+  const PERIOD = 120;   // seconds; matches the shader's base frequency exactly
+  (function frame(now){
+    if (window.__dotFreeze == null){
+      mx += (tmx - mx) * 0.06;
+      my += (tmy - my) * 0.06;
+    } else { mx = tmx; my = tmy; }
+    if (window.__dotFreeze != null) revealT = 1.6;
+    else if (ready && revealT < 1.6) revealT += 0.016;
+
+    // Wrapped time: seamless because every shader frequency divides PERIOD.
+    // A test hook lets automation jump the clock to verify the wrap.
+    const tt = (window.__dotFreeze != null)
+      ? window.__dotFreeze % PERIOD
+      : (((now - t0) / 1000) + (window.__dotWarp || 0)) % PERIOD;
+
+    gl.useProgram(prog);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.uniform2f(U.res, canvas.width, canvas.height);
+    gl.uniform1f(U.pitch, Math.max(4.6, innerWidth / 260) * dpr);
+    gl.uniform1f(U.t, tt);
+    gl.uniform1f(U.reveal, Math.min(revealT, 1.4));
+    gl.uniform2f(U.mouse, mx, my);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    requestAnimationFrame(frame);
+  })(t0);
+
+  return { set };
+})();
+
+/* ============ hero backdrop ============ */
+const heroBg = (function(){
+  const el = document.getElementById("bg-img");
+  if (!el) return { set(){} };
+
+  let current = null;
+
+  function set(src){
+    if (!src || src === current) return;
+    current = src;
+    dotMatrix.set(src);
+    const pre = new Image();
+    pre.onload = () => {
+      el.style.backgroundImage = `url("${src}")`;
+      document.body.classList.add("bg-ready");
+    };
+    pre.onerror = () => document.body.classList.add("bg-ready");
+    pre.src = src;
+  }
+
+  if (!RM){
+    let cur = 0, tgt = 0, running = false;
+    let hbMax = 1;
+    const hbMeasure = () => { hbMax = Math.max(document.body.scrollHeight - innerHeight, 1); };
+    hbMeasure();
+    addEventListener("resize", hbMeasure, {passive:true});
+    const apply = () => {
+      // Skip entirely while the dot matrix is presenting — the image is hidden.
+      if (document.body.classList.contains("dots-ready")) return;
+      const prog = Math.min(cur / hbMax, 1);
+      el.style.transform =
+        `translateY(${(-cur * 0.22).toFixed(1)}px) scale(${(1.02 + prog * 0.06).toFixed(3)})`;
+      el.style.setProperty("--bg-op", Math.max(0, 1 - prog * 3.2).toFixed(3));
+    };
+    addEventListener("scroll", () => {
+      tgt = scrollY;
+      if (!running){ running = true; requestAnimationFrame(loop); }
+    }, {passive:true});
+    function loop(){
+      cur += (tgt - cur) * 0.09;
+      apply();
+      if (Math.abs(tgt - cur) > 0.5) requestAnimationFrame(loop);
+      else { cur = tgt; apply(); running = false; }
+    }
+    apply();
+  }
+
+  return { set };
+})();
+
+/* ============ cursor ============ */
+const cursor = document.getElementById("cursor");
+const ring   = document.getElementById("cursor-ring");
+const label  = document.getElementById("cursor-label");
+/* ============ reveal on scroll ============ */
+const io = new IntersectionObserver(entries=>{
+  entries.forEach(en=>{
+    if(!en.isIntersecting) return;
+    en.target.animate(
+      [{opacity:0,transform:"translateY(28px)"},{opacity:1,transform:"none"}],
+      {duration:900,easing:"cubic-bezier(.16,1,.3,1)",fill:"forwards"}
+    );
+    io.unobserve(en.target);
+  });
+},{threshold:.12,rootMargin:"0px 0px -8% 0px"});
+const observeReveals = () => document.querySelectorAll(".reveal").forEach(el=>{
+  if(el.dataset.obs) return; el.dataset.obs="1"; io.observe(el);
+});
+
+/* ============ glass magnification ============ */
+/* Previous approach re-rendered the dot lattice at a magnified scale inside
+   a shader and point-sampled it. That produces moiré rings: a high-frequency
+   lattice sampled once per pixel aliases badly, and no tuning fixes it.
+   Instead each panel now holds a live copy of the SAME canvas the backdrop
+   draws, scaled with a CSS transform. The browser resamples it with proper
+   filtering — so no aliasing — and CSS transforms are composited with the
+   scroll, so the magnified view can never lag behind by a frame. */
+(function glassMagnify(){
+  if (RM) return;
+  if (!matchMedia("(hover:hover)").matches) return;
+
+  const src = document.getElementById("bg-dots");
+  if (!src) return;
+
+  const MAG = 2.05;     // how much the glass magnifies at its centre
+  const views = [];
+
+  function attach(el){
+    if (el.dataset.mag2) return;
+    el.dataset.mag2 = "1";
+
+    const holder = document.createElement("div");
+    holder.className = "mag-view";
+    holder.setAttribute("aria-hidden", "true");
+
+    // A canvas that mirrors the backdrop, drawn once per frame.
+    const cv = document.createElement("canvas");
+    const ctx = cv.getContext("2d");
+    holder.appendChild(cv);
+    el.insertBefore(holder, el.firstChild);
+    views.push({ el, holder, cv, ctx });
+  }
+
+  function attachAll(){
+    document.querySelectorAll(".glassy, .brief, .filters button").forEach(attach);
+  }
+  attachAll();
+  addEventListener("grid:ready", attachAll);
+
+  let dpr = 1;
+  (function frame(){
+    dpr = Math.min(devicePixelRatio || 1, 1.5);
+    for (const v of views){
+      const r = v.el.getBoundingClientRect();
+      if (r.bottom < -40 || r.top > innerHeight + 40 || r.width < 4){
+        v.holder.style.opacity = "0";
+        continue;
+      }
+      v.holder.style.opacity = "1";
+
+      const w = Math.max(1, Math.round(r.width * dpr));
+      const h = Math.max(1, Math.round(r.height * dpr));
+      if (v.cv.width !== w || v.cv.height !== h){
+        // Backing-store size only. Never set inline width/height styles:
+        // the canvas sits in an absolutely-positioned layer and is stretched
+        // by CSS, so it cannot feed back into the host's height.
+        v.cv.width = w; v.cv.height = h;
+      }
+
+      // A real lens does not scale uniformly. Magnification is strongest at
+      // the centre and falls off toward the rim, which is what curves the
+      // image. Drawing the region as a stack of horizontal strips, each with
+      // its own scale factor, produces that curvature — and because each
+      // strip is drawn with drawImage the browser filters it, so there is no
+      // aliasing and the seams blend.
+      const SLICES = 26;
+      const kx = src.width  / innerWidth;
+      const ky = src.height / innerHeight;
+
+      v.ctx.clearRect(0, 0, w, h);
+      v.ctx.imageSmoothingEnabled = true;
+      v.ctx.imageSmoothingQuality = "high";
+
+      const cxDst = w / 2;
+      for (let s = 0; s < SLICES; s++){
+        // Destination strip, in device px.
+        const dy0 = (s     / SLICES) * h;
+        const dy1 = ((s+1) / SLICES) * h;
+        const dh  = dy1 - dy0;
+
+        // Normalised distance of this strip from the vertical centre: 0 at
+        // the middle, 1 at top and bottom edges.
+        const t  = Math.abs(((dy0 + dh/2) / h) * 2 - 1);
+        // Lens profile: full magnification in the middle, easing to almost
+        // none at the rim, so the image compresses toward the edges.
+        const magHere = 1 + (MAG - 1) * Math.pow(1 - t*t, 1.35);
+
+        // Source strip: narrower than the destination by the local scale.
+        const sHalfW = (r.width  / magHere) / 2;
+        const sCy    = r.top + (dy0 + dh/2) / h * r.height;
+        const sHalfH = (dh / h) * (r.height / magHere) / 2;
+
+        const sx0 = (r.left + r.width/2 - sHalfW) * kx;
+        const sy0 = (sCy - sHalfH) * ky;
+        const sw0 = (sHalfW * 2) * kx;
+        const sh0 = (sHalfH * 2) * ky;
+
+        // Slight horizontal bow: strips near the rim shift inward a touch,
+        // the way a curved surface pulls the image toward its centre.
+        const bow = Math.pow(t, 2.0) * (r.width * 0.028);
+
+        try{
+          v.ctx.drawImage(src, sx0, sy0, sw0, sh0,
+                          bow * dpr, dy0, w - bow * 2 * dpr, dh + 1);
+        }catch(e){ /* canvas not ready */ }
+      }
+
+      // Smudge pass: real glass smears slightly as it bends light. Redrawing
+      // the result over itself at small offsets, at low alpha, softens the
+      // hard dot edges into flowing shapes without blurring the whole thing
+      // into frosted mush.
+      try{
+        v.ctx.globalAlpha = 0.30;
+        v.ctx.drawImage(v.cv, -2.2 * dpr, 0, w, h);
+        v.ctx.drawImage(v.cv,  2.2 * dpr, 0, w, h);
+        v.ctx.drawImage(v.cv, 0, -2.2 * dpr, w, h);
+        v.ctx.drawImage(v.cv, 0,  2.2 * dpr, w, h);
+        v.ctx.globalAlpha = 0.18;
+        v.ctx.drawImage(v.cv, -4.5 * dpr, 0, w, h);
+        v.ctx.drawImage(v.cv,  4.5 * dpr, 0, w, h);
+        v.ctx.globalAlpha = 1;
+      }catch(e){}
+    }
+    requestAnimationFrame(frame);
+  })();
+
+  document.body.classList.add("mag-on");
+})();
+
+/* ============ project grid ============ */
+const grid = document.getElementById("work-grid");
+const filterBar = document.getElementById("filters");
+let PROJECTS = [], activeFilter = "All";
+
+function cardHTML(p, i){
+  const n = String(i+1).padStart(2,"0");
+  const tag = p.fields?.[0] || "Visualization";
+  const href = p.url || "#";
+  const img = p.cover
+    ? `<img src="${p.cover}" alt="${p.title}" loading="lazy" crossorigin="anonymous">`
+    : `<img alt="" aria-hidden="true">`;
+  return `
+    <a class="card reveal" href="${href}" target="_blank" rel="noopener" data-fields="${(p.fields||[]).join("|")}">
+      <div class="card-media">
+        <span class="card-num">${n}</span>
+        ${img}
+        <div class="card-plate">
+          <b>${p.title}</b>
+          <span>${tag}</span>
+          <i>&#8599;</i>
+        </div>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title">${p.title}</h3>
+        <span class="card-tag">${tag}</span>
+      </div>
+    </a>`;
+}
+
+function render(){
+  const list = activeFilter === "All"
+    ? PROJECTS
+    : PROJECTS.filter(p => (p.fields||[]).includes(activeFilter));
+
+  if(!list.length){
+    heroBg.set("img/bg.jpg");
+    grid.innerHTML = `<div class="grid-empty">
+      <p>No projects yet. Open <strong>setup.html</strong> to add them &mdash; takes about a minute.</p>
+      <p><a href="https://www.behance.net/kapoudjianaram" target="_blank" rel="noopener">View the full portfolio on Behance &#8599;</a></p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = list.map(cardHTML).join("");
+
+  grid.querySelectorAll(".card-media").forEach(media=>{
+    const img = media.querySelector("img");
+    if(!img || !img.getAttribute("src")) return;
+    img.addEventListener("error", ()=>{ media.style.background = "var(--ink-2)"; }, {once:true});
+  });
+
+  const feature = PROJECTS.find(x => x.cover);
+  heroBg.set(feature ? feature.cover : "img/bg.jpg");
+
+  observeReveals();
+  dispatchEvent(new Event("grid:ready"));
+}
+
+function buildFilters(){
+  const all = new Set();
+  PROJECTS.forEach(p => (p.fields||[]).forEach(f => all.add(f)));
+  const tags = ["All", ...[...all].sort()];
+  if (tags.length < 3){ filterBar.style.display = "none"; return; }
+  filterBar.innerHTML = tags.map(t =>
+    `<button type="button" aria-pressed="${t===activeFilter}">${t}</button>`
+  ).join("");
+  filterBar.querySelectorAll("button").forEach(b=>{
+    b.addEventListener("click", ()=>{
+      activeFilter = b.textContent;
+      filterBar.querySelectorAll("button").forEach(x=>
+        x.setAttribute("aria-pressed", String(x === b)));
+      render();
+    });
+  });
+}
+
+async function loadProjects(){
+  // 0. Preview handoff from setup.html.
+  if (new URLSearchParams(location.search).has("preview")) {
+    try{
+      const p = JSON.parse(sessionStorage.getItem("PREVIEW_PROJECTS") || "null");
+      if (p && Array.isArray(p.projects)) {
+        PROJECTS = p.projects;
+        buildFilters(); render();
+        return;
+      }
+    }catch{}
+  }
+  // 1. projects.js sets window.PROJECT_DATA and works from file:// (double-click).
+  if (window.PROJECT_DATA && Array.isArray(window.PROJECT_DATA.projects)) {
+    PROJECTS = window.PROJECT_DATA.projects;
+  } else {
+    // 2. Fall back to the JSON the daily sync writes (needs http://).
+    try{
+      const res = await fetch("data/projects.json", {cache:"no-cache"});
+      if(!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      PROJECTS = Array.isArray(data.projects) ? data.projects : [];
+    }catch{
+      PROJECTS = [];
+    }
+  }
+  buildFilters();
+  render();
+}
+
+/* ============ intro ============ */
+(function intro(){
+  const loader = document.getElementById("loader");
+  const count = loader.querySelector(".count");
+  const bar = loader.querySelector(".bar");
+  const dur = RM ? 200 : 1500;
+  const t0 = performance.now();
+
+  (function tick(now){
+    const p = Math.min((now-t0)/dur, 1);
+    const eased = 1-Math.pow(1-p,2);
+    count.textContent = String(Math.round(eased*100)).padStart(2,"0");
+    bar.style.width = (eased*100)+"%";
+    if(p<1){ requestAnimationFrame(tick); return; }
+
+    document.body.classList.add("loaded");
+    setTimeout(()=>{
+      loader.remove();
+      document.querySelectorAll(".hero-title .line > span").forEach((s,i)=>{
+        s.animate([{transform:"translateY(105%)"},{transform:"none"}],
+          {duration:1100,delay:i*110,easing:"cubic-bezier(.16,1,.3,1)",fill:"forwards"});
+      });
+      const rule = document.querySelector(".hero-rule");
+      rule.animate([{transform:"scaleX(0)"},{transform:"scaleX(1)"}],
+        {duration:1200,delay:300,easing:"cubic-bezier(.76,0,.24,1)",fill:"forwards"});
+      observeReveals();
+    }, RM ? 0 : 700);
+  })(t0);
+})();
+
+loadProjects();
+</script>
+</body>
+</html>
