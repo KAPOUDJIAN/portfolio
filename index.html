@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aram Kapoudjian</title>
+
+<style>
+:root{
+  --ink:#0B0B0C;
+  --paper:#EDE9E3;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  min-height:220vh;          /* room to scroll so the header can be seen holding */
+  background:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ---------- background: scene blobs + dot matrix ---------- */
+#bg{
+  position:fixed;inset:0;z-index:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+#bg-scene{
+  position:absolute;inset:0;overflow:hidden;
+  z-index:0;pointer-events:none;
+}
+.bg-blob{
+  position:absolute;border-radius:50%;
+  filter:blur(40px);
+  will-change:transform;
+}
+.bg-blob--1{
+  width:70vw;height:70vw;left:-10vw;top:-14vw;
+  background:radial-gradient(circle at 50% 50%,
+    rgba(30,44,74,.36), rgba(30,44,74,0) 68%);
+  animation:blobDrift1 66.7s ease-in-out infinite;
+}
+.bg-blob--2{
+  width:60vw;height:60vw;right:-8vw;top:6vw;
+  background:radial-gradient(circle at 50% 50%,
+    rgba(20,34,58,.33), rgba(20,34,58,0) 68%);
+  animation:blobDrift2 84.1s ease-in-out infinite;
+}
+.bg-blob--3{
+  width:52vw;height:52vw;left:14vw;bottom:-16vw;
+  background:radial-gradient(circle at 50% 50%,
+    rgba(70,44,52,.28), rgba(70,44,52,0) 70%);
+  animation:blobDrift3 92.8s ease-in-out infinite;
+}
+.bg-blob--4{
+  width:64vw;height:64vw;right:6vw;bottom:-10vw;
+  background:radial-gradient(circle at 50% 50%,
+    rgba(32,50,68,.30), rgba(32,50,68,0) 68%);
+  animation:blobDrift4 75.4s ease-in-out infinite;
+}
+@keyframes blobDrift1{0%,100%{transform:translate(0,0)}50%{transform:translate(8vw,6vw)}}
+@keyframes blobDrift2{0%,100%{transform:translate(0,0)}50%{transform:translate(-7vw,5vw)}}
+@keyframes blobDrift3{0%,100%{transform:translate(0,0)}50%{transform:translate(6vw,-6vw)}}
+@keyframes blobDrift4{0%,100%{transform:translate(0,0)}50%{transform:translate(-5vw,-7vw)}}
+@media (prefers-reduced-motion:reduce){ .bg-blob{animation:none} }
+
+#bg-dots{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  opacity:0;
+  transition:opacity 1.6s cubic-bezier(.16,1,.3,1);
+}
+body.dots-ready #bg-dots{opacity:.62}
+#bg-dots{opacity:.20}
+
+
+
+
+/* ---------- liquid glass capsule ----------
+   Technique from the FreeFrontend collection (Ignacio Correia, MIT):
+   backdrop-filter runs an SVG filter whose feImage supplies a displacement
+   map. The map is sampled three times at slightly different scales for the
+   R/G/B channels, which produces chromatic aberration at the rim the way
+   real thick glass splits light. */
+
+
+
+/* dot-matrix headline, sitting over the canvas */
+
+
+/* ---------- header ----------
+   Blurred, slightly tinted panel so the dot wordmark never blends into the
+   field behind it, plus a hairline to seat it. */
+
+
+
+
+
+
+
+
+@media (max-width:680px){  }
+
+
+/* dot-matrix headline, centred over the canvas */
+#dm{
+  position:fixed; inset:0;
+  z-index:3; pointer-events:none;
+}
+
+
+/* Header. The anchors are empty and invisible -- they only give the grid
+   renderer a position and width. The canvas paints the cells on top, and
+   because it is pointer-events:none the links underneath stay clickable. */
+header{
+  position:fixed; top:0; left:0; right:0; z-index:4;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:clamp(14px,4vw,60px);
+  padding:0 clamp(16px,3vw,34px);
+}
+.h-mark{flex:0 0 auto}
+.h-mid{flex:0 0 auto; width:260px}
+.h-nav{flex:0 0 auto; display:flex; gap:clamp(12px,2.2vw,30px)}
+.h-nav a{display:block}
+header a{text-decoration:none; color:transparent}
+.dt{display:block}
+</style>
+</head>
+<body>
+
+<div id="bg" aria-hidden="true">
+  <div id="bg-scene" data-lg-scene>
+    <span class="bg-blob bg-blob--1"></span>
+    <span class="bg-blob bg-blob--2"></span>
+    <span class="bg-blob bg-blob--3"></span>
+    <span class="bg-blob bg-blob--4"></span>
+  </div>
+  <canvas id="bg-dots"></canvas>
+</div>
+
+
+<script type="module">
+
+
+
+
+const RM = matchMedia("(prefers-reduced-motion: reduce)").matches;
+// Dense, fixed dot spacing in CSS pixels — identical on phone, tablet, or a
+// 4K monitor. Previously this scaled with innerWidth, which made dots sparse
+// on wide screens and artificially dense (clamped) on narrow ones.
+const SPEED = 0.69;   // shader motion rate, x wall-clock
+const PITCH_CSS_PX = 3.6;   // spacing between dot centres, CSS px
+const DOT_SCALE = 0.9;      // dot diameter as a fraction of pitch (0..1)
+
+/* ============ dot matrix backdrop ============ */
+const dotMatrix = (function(){
+  const canvas = document.getElementById("bg-dots");
+  if (!canvas || RM) return { set(){} };
+
+  const gl = canvas.getContext("webgl", {alpha:true, antialias:false, depth:false});
+  if (!gl) return { set(){} };
+
+  const VERT = `attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0.,1.);}`;
+
+  const FRAG = `
+precision highp float;
+varying vec2 uv;
+uniform vec2  res;
+uniform float pitch, t, reveal, dotScale;
+uniform vec2  mouse;
+
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1,311.7))) * 43758.5453); }
+const float W = 0.05235987755982988;
+
+float field(vec2 p){
+  // Domain warp: bend the sampling space with slow low-frequency waves
+  // before reading the main waves from it. Straight wavefronts become
+  // curved and folded, so the field reads as flowing rather than as the
+  // regular criss-cross plaid that fixed-angle sine sums produce.
+  vec2 q = p;
+  q.x += sin(p.y * 2.1 + t * ( 5.0*W)) * 0.34;
+  q.y += cos(p.x * 1.7 - t * ( 4.0*W)) * 0.30;
+  // Second warp pass at a finer scale adds the smaller curls inside the
+  // large folds.
+  vec2 r = q;
+  r.x += sin(q.y * 4.3 - t * ( 9.0*W)) * 0.16;
+  r.y += cos(q.x * 3.9 + t * ( 7.0*W)) * 0.14;
+
+  float v = 0.0;
+  v += sin(r.x * 5.4 + r.y * 2.6 - t * (11.0*W)) * 0.52;
+  v += sin(r.y * 4.8 - r.x * 1.9 + t * ( 8.0*W)) * 0.40;
+  v += sin((r.x + r.y) * 3.1 + t * ( 6.0*W)) * 0.30;
+  v += sin(length(r - vec2(0.5)) * 8.5 - t * (13.0*W)) * 0.22;
+
+  // Two drifting ripple sources on different cycles, so their interference
+  // pattern never repeats the same way twice within the loop.
+  vec2 c1 = vec2(0.5 + sin(t * (3.0*W)) * 0.34,
+                 0.45 + cos(t * (2.0*W)) * 0.28);
+  float d1 = length((q - c1) * vec2(1.0, 1.18));
+  v += sin(d1 * 14.0 - t * (19.0*W)) * exp(-d1 * 1.7) * 0.72;
+
+  vec2 c2 = vec2(0.5 + cos(t * (2.0*W) + 2.2) * 0.30,
+                 0.50 + sin(t * (3.0*W) + 1.1) * 0.24);
+  float d2 = length((q - c2) * vec2(1.12, 1.0));
+  v += sin(d2 * 11.0 + t * (15.0*W)) * exp(-d2 * 1.9) * 0.58;
+
+  return v;
+}
+
+void main(){
+  vec2 px = uv * res;
+  vec2 cell = floor(px / pitch);
+  vec2 c    = (cell + 0.5) * pitch;
+  vec2 cuv  = c / res;
+  float ar  = res.x / res.y;
+  vec2 p    = vec2(cuv.x * ar, cuv.y);
+  p += vec2(sin(t * W), cos(t * W) * 0.4) * 1.05;
+
+  float v = field(p);
+  vec2 m = vec2(mouse.x * ar, mouse.y);
+  float md = length(p - (m + vec2(sin(t * W), cos(t * W) * 0.4) * 1.05));
+  v += exp(-md * md * 12.0) * 0.85;
+
+  float e = clamp(pow(smoothstep(-0.75, 0.95, v), 1.0) * 1.75, 0.0, 1.0);
+  // Gap between dot edges = pitch - 2r. Previous r = 0.1375*pitch gave a
+  // Radius as a fraction of pitch, so shrinking the pitch shrinks the dots
+  // proportionally and the dot-to-gap ratio is preserved.
+  float r = dotScale * 0.5 * pitch;
+  float d = length(px - c);
+  // Antialias band must scale with the dot, not be a fixed 0.6px. At a tight
+  // pitch a fixed band is wider than the dot itself and smears it into a
+  // blur; clamped to stay at least half a pixel so edges never alias hard.
+  float aa = max(0.35, r * 0.42);
+  float dot_ = 1.0 - smoothstep(r - aa, r + aa, d);
+
+  vec3 cold = vec3(0.34, 0.55, 0.84);
+  vec3 warm = vec3(1.00, 0.96, 0.90);
+  vec3 col  = mix(cold, warm, smoothstep(0.12, 0.66, e));
+  float jitter = 0.90 + hash(cell) * 0.20;
+  float bright = e * jitter;
+
+  gl_FragColor = vec4(col * bright, dot_ * clamp(bright * 2.6, 0.0, 1.0) * reveal);
+}`;
+
+  function sh(t, src){
+    const s = gl.createShader(t);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if(!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+    return s;
+  }
+  let prog;
+  try{
+    prog = gl.createProgram();
+    gl.attachShader(prog, sh(gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FRAG));
+    gl.linkProgram(prog);
+    if(!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error("link");
+    gl.useProgram(prog);
+  }catch(e){ return { set(){} }; }
+
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1,3,-1,-1,3]), gl.STATIC_DRAW);
+  const loc = gl.getAttribLocation(prog, "p");
+  gl.enableVertexAttribArray(loc);
+  gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+
+  const U = {};
+  ["res","pitch","t","reveal","mouse","dotScale"].forEach(n =>
+    U[n] = gl.getUniformLocation(prog, n));
+
+  let dpr = 1;
+  document.body.classList.add("dots-ready");
+  let lastW = 0, lastH = 0, resizeTimer = null;
+  function resize(){
+    dpr = Math.min(devicePixelRatio || 1, 1.5);
+    const w = innerWidth, hgt = innerHeight;
+    canvas.width  = Math.max(1, Math.floor(w * dpr));
+    canvas.height = Math.max(1, Math.floor(hgt * dpr));
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    lastW = w; lastH = innerHeight;
+  }
+  resize();
+  // Resize immediately -- never debounced. A debounce leaves the canvas at
+  // stale dimensions mid-drag while CSS stretches it, which is exactly what
+  // distorted the dots on vertical tab resize.
+  addEventListener("resize", resize, {passive:true});
+  addEventListener("orientationchange", resize, {passive:true});
+  if (window.ResizeObserver){
+    // Catches size changes that don't fire a window resize event.
+    new ResizeObserver(resize).observe(document.documentElement);
+  }
+
+  let mx = .5, my = .5, tmx = .5, tmy = .5;
+  addEventListener("pointermove", e => {
+    tmx = e.clientX / innerWidth;
+    tmy = 1 - e.clientY / innerHeight;
+  }, {passive:true});
+
+  const PERIOD = 960;
+  let shaderTime = 0, lastNow = performance.now();
+  (function frame(now){
+    mx += (tmx - mx) * 0.06;
+    my += (tmy - my) * 0.06;
+    // Accumulate time so SPEED can change live without the phase jumping.
+    const dt = Math.min(0.1, (now - lastNow) / 1000);
+    lastNow = now;
+    shaderTime = (shaderTime + dt * SPEED) % PERIOD;
+    const tt = (window.__dotFreeze != null)
+      ? window.__dotFreeze % PERIOD
+      : (shaderTime + (window.__dotWarp || 0)) % PERIOD;
+    const pitch = PITCH_CSS_PX * dpr;   // fixed CSS-px spacing on every screen
+
+    gl.uniform2f(U.res, canvas.width, canvas.height);
+    gl.uniform1f(U.pitch, pitch);
+    gl.uniform1f(U.t, tt);
+    gl.uniform2f(U.mouse, mx, my);
+    gl.uniform1f(U.reveal, 1);
+    gl.uniform1f(U.dotScale, DOT_SCALE);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+    requestAnimationFrame(frame);
+  })(performance.now());
+
+  let lumBuf = null;
+  function readLum(x, y, w, hgt, cols, rows, out){
+    const d = Math.min(devicePixelRatio || 1, 1.5);
+    const sx = Math.max(0, Math.floor(x * d));
+    const sw = Math.min(canvas.width - sx, Math.ceil(w * d));
+    const sy = Math.max(0, Math.floor(canvas.height - (y + hgt) * d));
+    const sh = Math.min(canvas.height - sy, Math.ceil(hgt * d));
+    if (sw <= 0 || sh <= 0) return false;
+    const need = sw * sh * 4;
+    if (!lumBuf || lumBuf.length < need) lumBuf = new Uint8Array(need);
+    try { gl.readPixels(sx, sy, sw, sh, gl.RGBA, gl.UNSIGNED_BYTE, lumBuf); }
+    catch(e){ return false; }
+    for (let j = 0; j < rows; j++){
+      const y0 = Math.floor((rows - 1 - j) * sh / rows);
+      const y1 = Math.max(y0 + 1, Math.floor((rows - j) * sh / rows));
+      for (let i = 0; i < cols; i++){
+        const x0 = Math.floor(i * sw / cols);
+        const x1 = Math.max(x0 + 1, Math.floor((i + 1) * sw / cols));
+        let s = 0, n = 0;
+        for (let yy = y0; yy < y1; yy += 2)
+          for (let xx = x0; xx < x1; xx += 2){
+            const k = (yy * sw + xx) * 4;
+            s += (lumBuf[k]*0.2126 + lumBuf[k+1]*0.7152 + lumBuf[k+2]*0.0722)/255;
+            n++;
+          }
+        out[j * cols + i] = n ? s / n : 0;
+      }
+    }
+    return true;
+  }
+  window.__field = { readLum, pitch: () => PITCH_CSS_PX, dotScale: () => DOT_SCALE };
+
+  return { set(){} };
+})();
+
+
+
+
+
+/* ============ text on the field's own grid ============
+   Every heading is drawn as cells on the same lattice the field uses: same
+   pitch, same dot size, cell centres from the same formula. The <div>s in the
+   markup are invisible anchors that supply position and width only -- one
+   shared canvas paints them all, so the type is always locked to the grid
+   even while the page scrolls. */
+(function gridText(){
+  const cv = document.getElementById("dm");
+  if (!cv || RM) return;
+  const ctx = cv.getContext("2d");
+  const P = PITCH_CSS_PX, R = P * DOT_SCALE / 2;
+  const HOLD = 1100, TRANS = 620, PAD = 3;
+
+  const scratch = document.createElement("canvas");
+  const sctx = scratch.getContext("2d", { willReadFrequently:true });
+  let W = 0, H = 0, dpr = 1;
+
+  // The centre mark: a set of forms drawn on the same cell grid as the type,
+  // cycled with the same staggered transition so it reads as part of the
+  // matrix rather than an icon dropped on top.
+  // A triangle held in 3D and spun, then filled on the cell grid. Because it
+  // is projected fresh each frame rather than tweened between flat drawings,
+  // the foreshortening is real -- it narrows and reverses as it turns edge-on.
+  // Points laid out on a lat/long mesh rather than scattered. The reference
+  // gets its character from that ordering -- rows and columns flowing over
+  // the surface, bunching where it curves away -- which a random spread
+  // cannot produce. Depth drives the colour, cyan on the near face falling
+  // to violet as it turns away.
+  const SPH_LAT = 46, SPH_LON = 76;
+  const SPH = (() => {
+    const pts = [];
+    for (let a = 1; a < SPH_LAT; a++){
+      const phi = Math.PI * a / SPH_LAT;
+      const sp = Math.sin(phi), cp = Math.cos(phi);
+      for (let b = 0; b < SPH_LON; b++){
+        const th = 2 * Math.PI * b / SPH_LON;
+        pts.push([sp * Math.cos(th), cp, sp * Math.sin(th)]);
+      }
+    }
+    return pts;
+  })();
+
+  function triCells(cols, rows, t, depth){
+    const g = new Uint8Array(cols * rows);
+    if (depth) depth.fill(-2);
+    const ox = (cols - 1) / 2, oy = (rows - 1) / 2;
+    const base = Math.min(cols, rows) * 0.40;
+    const ay = t * 0.5, ax = Math.sin(t * 0.27) * 0.55;
+    const cy = Math.cos(ay), sy = Math.sin(ay);
+    const cx2 = Math.cos(ax), sx2 = Math.sin(ax);
+
+    for (let k = 0; k < SPH.length; k++){
+      const [x0, y0, z0] = SPH[k];
+      const d = 1
+        + 0.17 * Math.sin(3.0 * x0 + t * 0.9)
+        + 0.14 * Math.sin(2.5 * y0 - t * 0.7)
+        + 0.11 * Math.sin(4.0 * z0 + t * 1.2);
+      const x = x0 * d, y = y0 * d, z = z0 * d;
+      const X = x * cy + z * sy, Z = -x * sy + z * cy;
+      const Y = y * cx2 - Z * sx2;
+      const Zc = y * sx2 + Z * cx2;
+      const persp = 1 / (1 + Zc * 0.28);
+      const i = Math.round(ox + X * base * persp);
+      const j = Math.round(oy + Y * base * persp);
+      if (i < 0 || i >= cols || j < 0 || j >= rows) continue;
+      const idx = j * cols + i;
+      g[idx] = 1;
+      // Keep the nearest point per cell so the front surface sets the colour.
+      if (depth && -Zc > depth[idx]) depth[idx] = -Zc;
+    }
+    return g;
+  }
+
+  const items = [...document.querySelectorAll("[data-dt]")].map(el => ({
+    el,
+    rows: +(el.dataset.rows || 13),
+    // Small type needs more cells than the field's pitch allows. Halving the
+    // pitch doubles the resolution and still lands on the field's lattice,
+    // since every second cell coincides with a field cell.
+    // Divisor on the field's pitch. 2 halves it, 4 quarters it -- every
+    // Nth cell still coincides with a field cell, so nothing drifts off-grid.
+    fine: +(el.dataset.fine || 1),
+    words: el.dataset.cycle ? el.dataset.cycle.split("|") : [el.dataset.text || ""],
+    shape: el.hasAttribute("data-shape"),
+    cycling: !!el.dataset.cycle || el.hasAttribute("data-shape"),
+    idx: 0, phase: "hold", t0: performance.now(),
+    cur: null, nxt: null, delay: null, cols: 0, rows2: 0,
+  }));
+
+  function resize(){
+    W = innerWidth; H = innerHeight;
+    dpr = Math.min(devicePixelRatio || 1, 2);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    cv.style.width = W + "px"; cv.style.height = H + "px";
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    for (const it of items) build(it);
+  }
+
+  // Which cells a word lights up, within the anchor's own width.
+  function sample(it, word){
+    const cols = it.cols, rows = it.rows2;
+    if (it.shape) return triCells(cols, rows, 0);
+    scratch.width = cols; scratch.height = rows;
+    sctx.clearRect(0, 0, cols, rows);
+    sctx.fillStyle = "#fff";
+    sctx.textAlign = "left"; sctx.textBaseline = "middle";
+    let fs = it.rows * 1.1;
+    const font = s => `700 ${s}px ui-monospace,SFMono-Regular,Menlo,monospace`;
+    sctx.font = font(fs);
+    const w = sctx.measureText(word).width;
+    if (w > cols * 0.99){ fs *= (cols * 0.99) / w; sctx.font = font(fs); }
+    sctx.fillText(word, 0, rows / 2);
+    const d = sctx.getImageData(0, 0, cols, rows).data;
+    const g = new Uint8Array(cols * rows);
+    for (let i = 0; i < g.length; i++) g[i] = d[i*4+3] > 120 ? 1 : 0;
+    return g;
+  }
+
+  function build(it){
+    // Fit-to-width shrinks longer words, so ARCHIVE ended up smaller than
+    // INFO. Sizing the anchor to its own text instead keeps every word at
+    // the same cell height.
+    if (it.el.hasAttribute("data-auto-width") && !it.shape){
+      const pp = P / (it.fine || 1);
+      const probe = document.createElement("canvas").getContext("2d");
+      probe.font = `700 ${it.rows * 1.1}px ui-monospace,SFMono-Regular,Menlo,monospace`;
+      const w = probe.measureText(it.words[0]).width;
+      it.el.style.width = Math.ceil((w + 2) * pp) + "px";
+    }
+    const r = it.el.getBoundingClientRect();
+    it.p = P / (it.fine || 1);
+    it.r = it.p * DOT_SCALE / 2;
+    it.cols  = Math.max(8, Math.floor(r.width / it.p));
+    it.rows2 = it.rows + PAD * 2;
+    it.el.style.height = (it.rows2 * it.p) + "px";
+    it.cur = sample(it, it.words[it.idx]);
+    it.nxt = sample(it, it.words[(it.idx + 1) % it.words.length]);
+    reseed(it);
+  }
+
+  function reseed(it){
+    it.delay = new Float32Array(it.cols * it.rows2);
+    for (let i = 0; i < it.delay.length; i++) it.delay[i] = Math.random();
+  }
+
+  resize();
+  let rt = null;
+  addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(resize, 170); }, {passive:true});
+
+  function paint(it, cells, depth){
+    const r = it.el.getBoundingClientRect();
+    if (r.bottom < -40 || r.top > H + 40) return;
+    // Snap the anchor's origin to the field's lattice so the heading's cells
+    // land exactly on field cells rather than between them.
+    const pp = it.p || P, rr = it.r || R;
+    const ox = Math.round(r.left / pp), oy = Math.round(r.top / pp);
+    ctx.fillStyle = "rgb(244,242,237)";
+    for (let j = 0; j < it.rows2; j++){
+      for (let i = 0; i < it.cols; i++){
+        const idx = j * it.cols + i;
+        if (!cells[idx]) continue;
+        if (depth){
+          // -1 back .. +1 front -> violet through blue to cyan
+          const u = Math.max(0, Math.min(1, (depth[idx] + 1) / 2));
+          const r = Math.round(186 - 130 * u);
+          const gg = Math.round(120 + 110 * u);
+          const bl = Math.round(246 - 20 * u);
+          ctx.fillStyle = `rgb(${r},${gg},${bl})`;
+        }
+        const x = (ox + i + 0.5) * pp;
+        const y = (oy + j + 0.5) * pp;
+        if (y < -pp || y > H + pp) continue;
+        ctx.beginPath(); ctx.arc(x, y, rr, 0, 6.2832); ctx.fill();
+      }
+    }
+  }
+
+  (function frame(now){
+    ctx.clearRect(0, 0, W, H);
+    for (const it of items){
+      if (it.shape){
+        if (!it.depth || it.depth.length !== it.cols * it.rows2)
+          it.depth = new Float32Array(it.cols * it.rows2);
+        paint(it, triCells(it.cols, it.rows2, now / 1000, it.depth), it.depth);
+        continue;
+      }
+      if (!it.cycling){ paint(it, it.cur); continue; }
+      const dt = now - it.t0;
+      const hold = it.shape ? 1800 : HOLD;
+      if (it.phase === "hold"){
+        paint(it, it.cur);
+        if (dt >= hold){ it.phase = "out"; it.t0 = now; }
+      } else if (it.phase === "out"){
+        // Clear before building: two words at different widths would
+        // otherwise overlap into an unreadable mass mid-transition.
+        const p = Math.min(1, dt / (TRANS * 0.5));
+        const m = new Uint8Array(it.cur.length);
+        for (let i = 0; i < m.length; i++) m[i] = p < it.delay[i] ? it.cur[i] : 0;
+        paint(it, m);
+        if (p >= 1){
+          it.cur = it.nxt;
+          it.idx = (it.idx + 1) % it.words.length;
+          it.nxt = sample(it, it.words[(it.idx + 1) % it.words.length]);
+          reseed(it); it.phase = "in"; it.t0 = now;
+        }
+      } else {
+        const p = Math.min(1, dt / (TRANS * 0.5));
+        const m = new Uint8Array(it.cur.length);
+        for (let i = 0; i < m.length; i++) m[i] = p > it.delay[i] ? it.cur[i] : 0;
+        paint(it, m);
+        if (p >= 1){ reseed(it); it.phase = "hold"; it.t0 = now; }
+      }
+    }
+    requestAnimationFrame(frame);
+  })(performance.now());
+})();
+
+document.querySelectorAll("[data-year]").forEach(n => n.textContent = new Date().getFullYear());
+</script>
+
+
+
+
+<canvas id="dm" aria-hidden="true"></canvas>
+
+
+
+<header>
+  <div class="h-mark dt" data-dt data-rows="20" data-fine="2" data-auto-width data-text="ARAM KAPOUDJIAN"></div>
+  <a class="h-mid dt" href="#top" data-dt data-rows="118" data-fine="4" data-shape aria-label="Home"></a>
+  <nav class="h-nav">
+    <a class="dt" href="#work"    data-dt data-rows="20" data-fine="2" data-auto-width data-text="WORK" aria-label="Work"></a>
+    <a class="dt" href="#archive" data-dt data-rows="20" data-fine="2" data-auto-width data-text="ARCHIVE" aria-label="Archive"></a>
+    <a class="dt" href="#info"    data-dt data-rows="20" data-fine="2" data-auto-width data-text="INFO" aria-label="Info"></a>
+  </nav>
+</header>
+</body>
+</html>
